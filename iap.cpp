@@ -302,6 +302,10 @@ void sendUSB(uint32_t ep, const void* d, uint32_t len)
 
 void Reset()
 {
+#if DEBUG
+	// If debugging is enabled start from bootloader next time
+	flash_clear_gpnvm(1);
+#endif
 	rstc_start_software_reset(RSTC);
 	while(true);
 }

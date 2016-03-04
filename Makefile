@@ -10,7 +10,7 @@ ARDUINO_VERSION := 1.6.5
 GCC_VERSION := 4.8.3-2014q1
 BOSSAC_VERSION := 1.3a-arduino
 
-DUET_BOARD_VERSION := 1.0.8
+DUET_BOARD_VERSION := 1.1.1
 
 # Workspace paths
 LIBRARY_PATH := $(PWD)/Libraries
@@ -56,7 +56,7 @@ CXX := $(GCC_PATH)/bin/$(CROSS_COMPILE)g++
 LD := $(GCC_PATH)/bin/$(CROSS_COMPILE)gcc
 OBJCOPY := $(GCC_PATH)/bin/$(CROSS_COMPILE)objcopy
 
-INCLUDES := $(DUET_BOARD_PATH)/libraries/Flash $(DUET_BOARD_PATH)/libraries/SD_HSMCI $(DUET_BOARD_PATH)/libraries/SD_HSMCI/utility
+INCLUDES := $(DUET_BOARD_PATH)/libraries/Flash $(DUET_BOARD_PATH)/libraries/SD_HSMCI $(DUET_BOARD_PATH)/libraries/SD_HSMCI/utility $(DUET_BOARD_PATH)/libraries/SPI/
 INCLUDES += $(DUET_BOARD_PATH)/cores/arduino $(DUET_BOARD_PATH)/variants/duet
 INCLUDES += $(DUET_BOARD_PATH)/system/libsam $(DUET_BOARD_PATH)/system/libsam/include $(DUET_BOARD_PATH)/system/CMSIS/CMSIS/Include $(DUET_BOARD_PATH)/system/CMSIS/Device/ATMEL
 
