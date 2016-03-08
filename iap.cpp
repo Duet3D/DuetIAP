@@ -19,9 +19,14 @@
 FATFS fs;
 FIL upgradeBinary;
 
-char readData[blockReadSize];
+uint32_t readData32[(blockReadSize + 3) / 4 + 1];	// should use aligned memory so DMA works well
+char *readData = reinterpret_cast<char *>(readData32);
+
 ProcessState state = UnlockingFlash;
 uint32_t flashPos = IFLASH_ADDR;
+
+size_t retry = 0;
+size_t bytesRead, bytesToRead, bytesToWrite;
 
 
 /** Arduino routines **/
@@ -128,7 +133,7 @@ void openBinary()
 		Reset();
 	}
 
-	const size_t maxFirmwareSize = lastSectorAddress - IFLASH_ADDR;
+	const size_t maxFirmwareSize = IFLASH_SIZE - iapFirmwareSize;
 	if (info.fsize > maxFirmwareSize)
 	{
 		debugPrintf("ERROR: The upgrade file is too big!\n");
@@ -150,7 +155,14 @@ void openBinary()
 // This implements the actual functionality of this program
 void writeBinary()
 {
-	size_t bytesRead, bytesToRead, bytesToWrite;
+	if (retry > maxRetries)
+	{
+		debugPrintf("ERROR: Operation failed after %d retries!\n", maxRetries);
+		debugPrintf("Press the ERASE button and flash the new binary manually.\n");
+		closeAndDeleteBinary();
+		Reset();
+	}
+
 	switch (state)
 	{
 		case UnlockingFlash:
@@ -158,12 +170,19 @@ void writeBinary()
 			debugPrintf("Unlocking 0x%08x - 0x%08x\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
 
 			cpu_irq_disable();
-			flash_unlock(flashPos, flashPos + IFLASH_PAGE_SIZE - 1, nullptr, nullptr);
+			if (flash_unlock(flashPos, flashPos + IFLASH_PAGE_SIZE - 1, nullptr, nullptr) == FLASH_RC_OK)
+			{
+				flashPos += IFLASH_PAGE_SIZE;
+				retry = 0;
+			}
+			else
+			{
+				retry++;
+			}
 			cpu_irq_enable();
-			flashPos += IFLASH_PAGE_SIZE;
 
 			// Make sure we stay within FW Flash area
-			if (flashPos >= lastSectorAddress)
+			if (flashPos >= firmwareFlashEnd)
 			{
 				flashPos = IFLASH_ADDR;
 				state = WritingUpgrade;
@@ -171,60 +190,91 @@ void writeBinary()
 			break;
 
 		case WritingUpgrade:
-			// Read a chunk from the upgrade file
-			if (f_read(&upgradeBinary, readData, blockReadSize, &bytesRead) != FR_OK)
+			// Attempt to read a chunk from the new firmware file
+			if (retry == 0)
 			{
-				debugPrintf("ERROR: Could not read from upgrade file!\n");
-				debugPrintf("Press the ERASE button and flash the new binary manually.\n");
-				closeAndDeleteBinary();
-				Reset();
+				if (f_read(&upgradeBinary, readData, blockReadSize, &bytesRead) != FR_OK)
+				{
+					debugPrintf("ERROR: Could not read from upgrade file!\n");
+					debugPrintf("Press the ERASE button and flash the new binary manually.\n");
+					closeAndDeleteBinary();
+					Reset();
+				}
+
+				// Have we finished the file?
+				if (bytesRead != blockReadSize)
+				{
+					// Yes - close and delete it
+					closeAndDeleteBinary();
+
+					// Now we just need to fill up the remaining pages with zeros
+					memset(readData + bytesRead, 0, blockReadSize - bytesRead);
+				}
+				bytesToWrite = min(firmwareFlashEnd - flashPos, blockReadSize);
 			}
 
-			// Have we finished the file?
-			if (bytesRead == 0)
-			{
-				// Yes - now we just need to fill up the remaining pages with zeros
-				closeAndDeleteBinary();
-
-				memset(readData, 0, sizeof(readData));
-				state = FillingZeros;
-				break;
-			}
-
-			// No - write another chunk
-			debugPrintf("Writing 0x%08x - 0x%08x\n", flashPos, flashPos + bytesRead);
+			// Write another chunk
+			debugPrintf("Writing 0x%08x - 0x%08x\n", flashPos, flashPos + bytesToWrite - 1);
 
 			cpu_irq_disable();
-			flash_write(flashPos, readData, bytesRead, 1);
+			if (flash_write(flashPos, readData, bytesToWrite, 1) != FLASH_RC_OK)
+			{
+				retry++;
+				cpu_irq_enable();
+				break;
+			}
 			cpu_irq_enable();
 
-			// Verify the data written
-			if (memcmp(readData, reinterpret_cast<void *>(flashPos), bytesRead) != 0)
+			// Verify the written data
+			if (memcmp(readData, reinterpret_cast<void *>(flashPos), bytesToWrite) == 0)
 			{
-				debugPrintf("ERROR: Verification during write failed!\n");
-				debugPrintf("Press the ERASE button and flash the new binary manually.\n");
-				closeAndDeleteBinary();
-				Reset();
+				flashPos += bytesToWrite;
+				if (flashPos >= firmwareFlashEnd || bytesRead != bytesToWrite)
+				{
+					memset(readData, 0, blockReadSize);
+					state = FillingZeros;
+				}
+				retry = 0;
 			}
-
-			// Go to the next page
-			flashPos += bytesRead;
+			else
+			{
+				retry++;
+			}
 			break;
 
 		case FillingZeros:
 			// We've finished the upgrade process, so fill up the remaining space with zeros
-			bytesToWrite = min(lastSectorAddress - flashPos, blockReadSize);
-			debugPrintf("Filling 0x%08x - 0x%08x with zeros\n", flashPos, flashPos + bytesToWrite);
+			bytesToWrite = min(firmwareFlashEnd - flashPos, blockReadSize);
+			debugPrintf("Filling 0x%08x - 0x%08x with zeros\n", flashPos, flashPos + bytesToWrite - 1);
 
 			cpu_irq_disable();
-			flash_write(flashPos, readData, sizeof(readData), 1);
+			if (flash_write(flashPos, readData, bytesToWrite, 1) == FLASH_RC_OK)
+			{
+				flashPos += bytesToWrite;
+				retry = 0;
+			}
+			else
+			{
+				retry++;
+				cpu_irq_enable();
+				break;
+			}
 			cpu_irq_enable();
 
-			flashPos += bytesToWrite;
-			if (flashPos >= lastSectorAddress)
+			// Verify the written data
+			if (memcmp(readData, reinterpret_cast<void *>(flashPos), bytesToWrite) == 0)
 			{
-				flashPos = IFLASH_ADDR;
-				state = LockingFlash;
+				flashPos += bytesToWrite;
+				if (flashPos >= firmwareFlashEnd)
+				{
+					flashPos = IFLASH_ADDR;
+					state = LockingFlash;
+				}
+				retry = 0;
+			}
+			else
+			{
+				retry++;
 			}
 			break;
 
@@ -233,16 +283,21 @@ void writeBinary()
 			debugPrintf("Locking 0x%08x - 0x%08x\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
 
 			cpu_irq_disable();
-			flash_lock(flashPos, flashPos + IFLASH_PAGE_SIZE - 1, nullptr, nullptr);
-			cpu_irq_enable();
-			flashPos += IFLASH_PAGE_SIZE;
-
-			// Make sure we stay within FW Flash area
-			if (flashPos >= lastSectorAddress)
+			if (flash_lock(flashPos, flashPos + IFLASH_PAGE_SIZE - 1, nullptr, nullptr) == FLASH_RC_OK)
 			{
-				debugPrintf("Upgrade successful! Rebooting...\n");
-				Reset();
+				flashPos += IFLASH_PAGE_SIZE;
+				if (flashPos >= firmwareFlashEnd)
+				{
+					debugPrintf("Upgrade successful! Rebooting...\n");
+					Reset();
+				}
+				retry = 0;
 			}
+			else
+			{
+				retry++;
+			}
+			cpu_irq_enable();
 			break;
 	}
 }

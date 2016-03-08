@@ -19,12 +19,13 @@
 
 const size_t baudRate = 115200;						// For USB diagnostics
 
-const char *fwFile = "0:/sys/RepRapFirmware.bin";	// Which file shall be used for IAP?
-
 const uint32_t iapFirmwareSize = 0x10000;			// 64K max
-const uint32_t lastSectorAddress = IFLASH_ADDR + IFLASH_SIZE - iapFirmwareSize;
 
-const size_t blockReadSize = 2048;					// Read and write 2KB of data at once (must be multiple of IFLASH_PAGE_SIZE)
+const char *fwFile = "0:/sys/RepRapFirmware.bin";	// Which file shall be used for IAP?
+const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE - iapFirmwareSize;
+const size_t blockReadSize = 8192;					// Read and write 8KB of data at once (must be multiple of IFLASH_PAGE_SIZE)
+
+const size_t maxRetries = 5;						// Allow 5 retries max if anything goes wrong
 
 enum ProcessState
 {
