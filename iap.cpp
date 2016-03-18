@@ -19,14 +19,16 @@
 FATFS fs;
 FIL upgradeBinary;
 
-uint32_t readData32[(blockReadSize + 3) / 4 + 1];	// should use aligned memory so DMA works well
+uint32_t readData32[(blockReadSize + 3) / 4];	// should use aligned memory so DMA works well
 char *readData = reinterpret_cast<char *>(readData32);
 
 ProcessState state = UnlockingFlash;
 uint32_t flashPos = IFLASH_ADDR;
 
 size_t retry = 0;
-size_t bytesRead, bytesToRead, bytesToWrite;
+size_t bytesRead, bytesWritten;
+
+char formatBuffer[64];
 
 
 /** Arduino routines **/
@@ -61,58 +63,54 @@ void initFilesystem()
 
 	memset(&fs, 0, sizeof(FATFS));
 	sd_mmc_init();
-	delay(20);
 
-	bool abort = false;
+	size_t startTime = millis();
 	sd_mmc_err_t err;
 	do {
 		err = sd_mmc_check(0);
 		if (err > SD_MMC_ERR_NO_CARD)
 		{
-			abort = true;
+			break;
 		}
-		else
-		{
-			abort = (err == SD_MMC_ERR_NO_CARD && micros() > 5000000);
-		}
+		delay_ms(1);
+	} while (err != SD_MMC_OK && millis() - startTime < 5000);
 
-		if (abort)
+	if (err != SD_MMC_OK)
+	{
+		debugPrintf("ERROR: ");
+		switch (err)
 		{
-			debugPrintf("ERROR: ");
-			switch (err)
-			{
-				case SD_MMC_ERR_NO_CARD:
-					debugPrintf("Card not found\n");
-					break;
-				case SD_MMC_ERR_UNUSABLE:
-					debugPrintf("Card is unusable, try another one\n");
-					break;
-				case SD_MMC_ERR_SLOT:
-					debugPrintf("Slot unknown\n");
-					break;
-				case SD_MMC_ERR_COMM:
-					debugPrintf("General communication error\n");
-					break;
-				case SD_MMC_ERR_PARAM:
-					debugPrintf("Illegal input parameter\n");
-					break;
-				case SD_MMC_ERR_WP:
-					debugPrintf("Card write protected\n");
-					break;
-				default:
-					debugPrintf("Unknown (code %d)\n", err);
-					break;
-			}
-			Reset();
-			return;
+			case SD_MMC_ERR_NO_CARD:
+				debugPrintf("Card not found\n");
+				break;
+			case SD_MMC_ERR_UNUSABLE:
+				debugPrintf("Card is unusable, try another one\n");
+				break;
+			case SD_MMC_ERR_SLOT:
+				debugPrintf("Slot unknown\n");
+				break;
+			case SD_MMC_ERR_COMM:
+				debugPrintf("General communication error\n");
+				break;
+			case SD_MMC_ERR_PARAM:
+				debugPrintf("Illegal input parameter\n");
+				break;
+			case SD_MMC_ERR_WP:
+				debugPrintf("Card write protected\n");
+				break;
+			default:
+				debugPrintf("Unknown (code %d)\n", err);
+				break;
 		}
-	} while (err != SD_MMC_OK);
+		Reset(false);
+		return;
+	}
 
 	int mounted = f_mount(0, &fs);
 	if (mounted != FR_OK)
 	{
 		debugPrintf("Mount failed, code %d\n", mounted);
-		Reset();
+		Reset(false);
 	}
 
 	debugPrintf("Done\n");
@@ -129,24 +127,21 @@ void openBinary()
 	if (f_stat(fwFile, &info) != FR_OK)
 	{
 		debugPrintf("ERROR: Could not find upgrade file!\n");
-		debugPrintf("Press the ERASE button and flash the new binary manually.\n");
-		Reset();
+		Reset(false);
 	}
 
 	const size_t maxFirmwareSize = IFLASH_SIZE - iapFirmwareSize;
 	if (info.fsize > maxFirmwareSize)
 	{
 		debugPrintf("ERROR: The upgrade file is too big!\n");
-		debugPrintf("Press the ERASE button and flash the new binary manually.\n");
-		Reset();
+		Reset(false);
 	}
 
 	// Try to open the file
 	if (f_open(&upgradeBinary, fwFile, FA_OPEN_EXISTING | FA_READ) != FR_OK)
 	{
 		debugPrintf("ERROR: Could not open upgrade file!\n");
-		debugPrintf("Press the ERASE button and flash the new binary manually.\n");
-		Reset();
+		Reset(false);
 	}
 
 	debugPrintf("Done\n");
@@ -158,9 +153,11 @@ void writeBinary()
 	if (retry > maxRetries)
 	{
 		debugPrintf("ERROR: Operation failed after %d retries!\n", maxRetries);
-		debugPrintf("Press the ERASE button and flash the new binary manually.\n");
-		closeAndDeleteBinary();
-		Reset();
+		Reset(false);
+	}
+	else if (retry > 0)
+	{
+		debugPrintf("WARNING: Retry %d of %d at pos %08x\n", retry, maxRetries, flashPos);
 	}
 
 	switch (state)
@@ -178,6 +175,8 @@ void writeBinary()
 			else
 			{
 				retry++;
+				cpu_irq_enable();
+				break;
 			}
 			cpu_irq_enable();
 
@@ -185,21 +184,27 @@ void writeBinary()
 			if (flashPos >= firmwareFlashEnd)
 			{
 				flashPos = IFLASH_ADDR;
+				bytesWritten = blockReadSize;
 				state = WritingUpgrade;
 			}
 			break;
 
 		case WritingUpgrade:
 			// Attempt to read a chunk from the new firmware file
-			if (retry == 0)
+			if (bytesWritten == blockReadSize)
 			{
-				if (f_read(&upgradeBinary, readData, blockReadSize, &bytesRead) != FR_OK)
+				debugPrintf("Reading %u bytes from the file\n", blockReadSize);
+
+				FRESULT result = f_read(&upgradeBinary, readData, blockReadSize, &bytesRead);
+				if (result != FR_OK)
 				{
-					debugPrintf("ERROR: Could not read from upgrade file!\n");
-					debugPrintf("Press the ERASE button and flash the new binary manually.\n");
-					closeAndDeleteBinary();
-					Reset();
+					debugPrintf("WARNING: f_read returned err %d\n", result);
+					delay_ms(100);
+					retry++;
+					break;
 				}
+				retry = 0;
+				bytesWritten = 0;
 
 				// Have we finished the file?
 				if (bytesRead != blockReadSize)
@@ -210,14 +215,12 @@ void writeBinary()
 					// Now we just need to fill up the remaining pages with zeros
 					memset(readData + bytesRead, 0, blockReadSize - bytesRead);
 				}
-				bytesToWrite = min(firmwareFlashEnd - flashPos, blockReadSize);
 			}
 
-			// Write another chunk
-			debugPrintf("Writing 0x%08x - 0x%08x\n", flashPos, flashPos + bytesToWrite - 1);
-
+			// Write another page
+			debugPrintf("Writing 0x%08x - 0x%08x\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
 			cpu_irq_disable();
-			if (flash_write(flashPos, readData, bytesToWrite, 1) != FLASH_RC_OK)
+			if (flash_write(flashPos, readData + bytesWritten, IFLASH_PAGE_SIZE, 1) != FLASH_RC_OK)
 			{
 				retry++;
 				cpu_irq_enable();
@@ -226,12 +229,13 @@ void writeBinary()
 			cpu_irq_enable();
 
 			// Verify the written data
-			if (memcmp(readData, reinterpret_cast<void *>(flashPos), bytesToWrite) == 0)
+			if (memcmp(readData + bytesWritten, reinterpret_cast<void *>(flashPos), IFLASH_PAGE_SIZE) == 0)
 			{
-				flashPos += bytesToWrite;
-				if (flashPos >= firmwareFlashEnd || bytesRead != bytesToWrite)
+				bytesWritten += IFLASH_PAGE_SIZE;
+				flashPos += IFLASH_PAGE_SIZE;
+				if (bytesWritten == blockReadSize && bytesRead != blockReadSize)
 				{
-					memset(readData, 0, blockReadSize);
+					memset(readData, 0, IFLASH_PAGE_SIZE);
 					state = FillingZeros;
 				}
 				retry = 0;
@@ -244,16 +248,10 @@ void writeBinary()
 
 		case FillingZeros:
 			// We've finished the upgrade process, so fill up the remaining space with zeros
-			bytesToWrite = min(firmwareFlashEnd - flashPos, blockReadSize);
-			debugPrintf("Filling 0x%08x - 0x%08x with zeros\n", flashPos, flashPos + bytesToWrite - 1);
+			debugPrintf("Filling 0x%08x - 0x%08x with zeros\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
 
 			cpu_irq_disable();
-			if (flash_write(flashPos, readData, bytesToWrite, 1) == FLASH_RC_OK)
-			{
-				flashPos += bytesToWrite;
-				retry = 0;
-			}
-			else
+			if (flash_write(flashPos, readData, IFLASH_PAGE_SIZE, 1) != FLASH_RC_OK)
 			{
 				retry++;
 				cpu_irq_enable();
@@ -262,9 +260,9 @@ void writeBinary()
 			cpu_irq_enable();
 
 			// Verify the written data
-			if (memcmp(readData, reinterpret_cast<void *>(flashPos), bytesToWrite) == 0)
+			if (memcmp(readData, reinterpret_cast<void *>(flashPos), IFLASH_PAGE_SIZE) == 0)
 			{
-				flashPos += bytesToWrite;
+				flashPos += IFLASH_PAGE_SIZE;
 				if (flashPos >= firmwareFlashEnd)
 				{
 					flashPos = IFLASH_ADDR;
@@ -289,7 +287,7 @@ void writeBinary()
 				if (flashPos >= firmwareFlashEnd)
 				{
 					debugPrintf("Upgrade successful! Rebooting...\n");
-					Reset();
+					Reset(true);
 				}
 				retry = 0;
 			}
@@ -312,19 +310,42 @@ void closeAndDeleteBinary()
 	f_unlink(fwFile);
 }
 
+void Reset(bool success)
+{
+	// Only start from bootloader if the firmware couldn't be written entirely
+	if (!success && state < FillingZeros)
+	{
+		cpu_irq_disable();
+
+		// If anything went wrong, write the last error message to Flash to the beginning
+		// of the Flash memory. That may help finding out what went wrong...
+		flash_unlock(IFLASH_ADDR, IFLASH_ADDR + 64, nullptr, nullptr);
+		flash_write(IFLASH_ADDR, formatBuffer, strlen(formatBuffer), 1);
+		// no reason to lock it again
+
+		// Start from bootloader next time
+		flash_clear_gpnvm(1);
+
+		cpu_irq_enable();
+	}
+
+	// Reboot
+	rstc_start_software_reset(RSTC);
+	while(true);
+}
+
 
 /** Helper functions **/
 
 void debugPrintf(const char *fmt, ...)
 {
-#if DEBUG
-	char msg[64];
 	va_list vargs;
 	va_start(vargs, fmt);
-	vsnprintf(msg, 64, fmt, vargs);
+	vsnprintf(formatBuffer, 64, fmt, vargs);
 	va_end(vargs);
 
-	sendUSB(CDC_TX, msg, strlen(msg));
+#if DEBUG
+	sendUSB(CDC_TX, formatBuffer, strlen(formatBuffer));
 #endif
 }
 
@@ -353,16 +374,6 @@ void sendUSB(uint32_t ep, const void* d, uint32_t len)
 	{
 		UDD_ReleaseTX(ep);
 	}
-}
-
-void Reset()
-{
-#if DEBUG
-	// If debugging is enabled start from bootloader next time
-	flash_clear_gpnvm(1);
-#endif
-	rstc_start_software_reset(RSTC);
-	while(true);
 }
 
 // vim: ts=4:sw=4

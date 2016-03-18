@@ -19,13 +19,17 @@
 
 const size_t baudRate = 115200;						// For USB diagnostics
 
-const uint32_t iapFirmwareSize = 0x10000;			// 64K max
+const uint32_t iapFirmwareSize = 0x10000;			// 64 KiB max
 
 const char *fwFile = "0:/sys/RepRapFirmware.bin";	// Which file shall be used for IAP?
 const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE - iapFirmwareSize;
-const size_t blockReadSize = 8192;					// Read and write 8KB of data at once (must be multiple of IFLASH_PAGE_SIZE)
+
+// Read and write only 2 KiB of data at once (must be multiple of IFLASH_PAGE_SIZE).
+// Unfortunately we cannot increase this value further, because f_read() would mess up data
+const size_t blockReadSize = 2048;
 
 const size_t maxRetries = 5;						// Allow 5 retries max if anything goes wrong
+
 
 enum ProcessState
 {
@@ -35,12 +39,13 @@ enum ProcessState
 	LockingFlash
 };
 
+
 void initFilesystem();
 void openBinary();
 void writeBinary();
 void closeAndDeleteBinary();
+void Reset(bool success);
 
 void sendUSB(uint32_t ep, const void* d, uint32_t len);
-void Reset();
 
 // vim: ts=4:sw=4
