@@ -22,7 +22,7 @@ FIL upgradeBinary;
 uint32_t readData32[(blockReadSize + 3) / 4];	// should use aligned memory so DMA works well
 char *readData = reinterpret_cast<char *>(readData32);
 
-ProcessState state = UnlockingFlash;
+ProcessState state = Initializing;
 uint32_t flashPos = IFLASH_ADDR;
 
 size_t retry = 0;
@@ -63,6 +63,7 @@ void initFilesystem()
 
 	memset(&fs, 0, sizeof(FATFS));
 	sd_mmc_init();
+	delay_ms(20);
 
 	size_t startTime = millis();
 	sd_mmc_err_t err;
@@ -162,6 +163,9 @@ void writeBinary()
 
 	switch (state)
 	{
+		case Initializing:
+			state = UnlockingFlash;
+			// no break
 		case UnlockingFlash:
 			// Unlock each single page
 			debugPrintf("Unlocking 0x%08x - 0x%08x\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
@@ -313,7 +317,7 @@ void closeAndDeleteBinary()
 void Reset(bool success)
 {
 	// Only start from bootloader if the firmware couldn't be written entirely
-	if (!success && state < FillingZeros)
+	if (!success && state >= WritingUpgrade)
 	{
 		cpu_irq_disable();
 

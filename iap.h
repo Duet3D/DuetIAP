@@ -33,6 +33,7 @@ const size_t maxRetries = 5;						// Allow 5 retries max if anything goes wrong
 
 enum ProcessState
 {
+	Initializing,
 	UnlockingFlash,
 	WritingUpgrade,
 	FillingZeros,
