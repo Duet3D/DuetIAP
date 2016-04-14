@@ -13,9 +13,10 @@
 
 #include "Arduino.h"
 
-#include "DueFlashStorage.h"
-#include "SD_HSMCI.h"
-
+#if SAM3XA
+#define IFLASH_ADDR			(IFLASH0_ADDR)
+#define IFLASH_PAGE_SIZE	(IFLASH1_PAGE_SIZE)
+#endif
 
 const size_t baudRate = 115200;						// For USB diagnostics
 
@@ -35,6 +36,9 @@ enum ProcessState
 {
 	Initializing,
 	UnlockingFlash,
+#if SAM4E || SAM4S
+	ErasingFlash,
+#endif
 	WritingUpgrade,
 	FillingZeros,
 	LockingFlash

@@ -12,6 +12,11 @@
  */
 
 #include "iap.h"
+#include "DueFlashStorage.h"
+#include "ff.h"
+#include "sd_mmc.h"
+#include "rstc.h"
+#include <cstdarg>
 
 #define DEBUG	0
 
@@ -29,6 +34,13 @@ size_t retry = 0;
 size_t bytesRead, bytesWritten;
 
 char formatBuffer[64];
+
+inline void delay_ms(uint32_t ms)
+{
+	delay(ms);
+}
+
+void debugPrintf(const char *fmt, ...);			// forward declaration
 
 
 /** Arduino routines **/
@@ -188,10 +200,42 @@ void writeBinary()
 			if (flashPos >= firmwareFlashEnd)
 			{
 				flashPos = IFLASH_ADDR;
+#if SAM4E || SAM4S
+				state = ErasingFlash;
+#else
+				bytesWritten = blockReadSize;
+				state = WritingUpgrade;
+#endif
+			}
+			break;
+
+#if SAM4E || SAM4S
+		case ErasingFlash:
+			debugPrintf("Erasing 0x%08x\n", flashPos);
+			// Deal with varying size sectors on the SAM4E
+			if (flash_erase_sector(flashPos) == FLASH_RC_OK)
+			{
+				if (flashPos - IFLASH_ADDR < 16 * 1024)
+				{
+					flashPos += 8 * 1024;
+				}
+				else if (flashPos - IFLASH_ADDR == 16 * 1024)
+				{
+					flashPos += 48 * 1024;
+				}
+				else
+				{
+					flashPos += 64 * 1024;
+				}
+			}
+			if (flashPos >= firmwareFlashEnd)
+			{
+				flashPos = IFLASH_ADDR;
 				bytesWritten = blockReadSize;
 				state = WritingUpgrade;
 			}
 			break;
+#endif
 
 		case WritingUpgrade:
 			// Attempt to read a chunk from the new firmware file
@@ -224,7 +268,11 @@ void writeBinary()
 			// Write another page
 			debugPrintf("Writing 0x%08x - 0x%08x\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
 			cpu_irq_disable();
+#if SAM4E || SAM4S
+			if (flash_write(flashPos, readData + bytesWritten, IFLASH_PAGE_SIZE, 0) != FLASH_RC_OK)
+#else
 			if (flash_write(flashPos, readData + bytesWritten, IFLASH_PAGE_SIZE, 1) != FLASH_RC_OK)
+#endif
 			{
 				retry++;
 				cpu_irq_enable();
@@ -255,7 +303,11 @@ void writeBinary()
 			debugPrintf("Filling 0x%08x - 0x%08x with zeros\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
 
 			cpu_irq_disable();
+#if SAM4E || SAM4S
+			if (flash_write(flashPos, readData, IFLASH_PAGE_SIZE, 0) != FLASH_RC_OK)
+#else
 			if (flash_write(flashPos, readData, IFLASH_PAGE_SIZE, 1) != FLASH_RC_OK)
+#endif
 			{
 				retry++;
 				cpu_irq_enable();
@@ -353,6 +405,7 @@ void debugPrintf(const char *fmt, ...)
 #endif
 }
 
+#if DEBUG
 // We have to use our own USB transmit function here, because the Arduino core will
 // assume that the USB line is closed its equivalent is called...
 void sendUSB(uint32_t ep, const void* d, uint32_t len)
@@ -379,5 +432,6 @@ void sendUSB(uint32_t ep, const void* d, uint32_t len)
 		UDD_ReleaseTX(ep);
 	}
 }
+#endif
 
 // vim: ts=4:sw=4
