@@ -25,15 +25,17 @@ FATFS fs;
 FIL upgradeBinary;
 
 uint32_t readData32[(blockReadSize + 3) / 4];	// should use aligned memory so DMA works well
-char *readData = reinterpret_cast<char *>(readData32);
+char * const readData = reinterpret_cast<char *>(readData32);
 
 ProcessState state = Initializing;
 uint32_t flashPos = IFLASH_ADDR;
 
 size_t retry = 0;
 size_t bytesRead, bytesWritten;
+const size_t reportPercentIncrement = 20;
+size_t reportNextPercent = reportPercentIncrement;
 
-char formatBuffer[64];
+char formatBuffer[100];
 
 inline void delay_ms(uint32_t ms)
 {
@@ -42,11 +44,16 @@ inline void delay_ms(uint32_t ms)
 
 void debugPrintf(const char *fmt, ...);			// forward declaration
 
+void MessageF(const char *fmt, ...);			// forward declaration
+
 
 /** Arduino routines **/
 
 void setup()
 {
+	Serial.begin(57600);						// set serial port to default PanelDue baud rate
+	MessageF("IAP started");
+
 	debugPrintf("IAP Utility for Duet electronics\n");
 	debugPrintf("Developed by Christian Hammacher (2016)\n");
 	debugPrintf("Licensed under the terms of the GPLv2\n\n");
@@ -88,30 +95,42 @@ void initFilesystem()
 		delay_ms(1);
 	} while (err != SD_MMC_OK && millis() - startTime < 5000);
 
-	if (err != SD_MMC_OK)
+	if (err == SD_MMC_OK)
+	{
+		MessageF("SD card initialised OK");
+		debugPrintf("Done\n");
+	}
+	else
 	{
 		debugPrintf("ERROR: ");
 		switch (err)
 		{
 			case SD_MMC_ERR_NO_CARD:
+				MessageF("SD card not found");
 				debugPrintf("Card not found\n");
 				break;
 			case SD_MMC_ERR_UNUSABLE:
+				MessageF("SD card is unusable, try another one");
 				debugPrintf("Card is unusable, try another one\n");
 				break;
 			case SD_MMC_ERR_SLOT:
+				MessageF("SD slot unknown");
 				debugPrintf("Slot unknown\n");
 				break;
 			case SD_MMC_ERR_COMM:
+				MessageF("SD card communication error");
 				debugPrintf("General communication error\n");
 				break;
 			case SD_MMC_ERR_PARAM:
+				MessageF("SD interface illegal input parameter");
 				debugPrintf("Illegal input parameter\n");
 				break;
 			case SD_MMC_ERR_WP:
+				MessageF("SD card write protected");
 				debugPrintf("Card write protected\n");
 				break;
 			default:
+				MessageF("SD interface unknown error, code %d", err);
 				debugPrintf("Unknown (code %d)\n", err);
 				break;
 		}
@@ -122,11 +141,10 @@ void initFilesystem()
 	int mounted = f_mount(0, &fs);
 	if (mounted != FR_OK)
 	{
+		MessageF("SD card mount failed, code %d", mounted);
 		debugPrintf("Mount failed, code %d\n", mounted);
 		Reset(false);
 	}
-
-	debugPrintf("Done\n");
 }
 
 // Open the upgrade binary file so we can use it for flashing
@@ -139,6 +157,7 @@ void openBinary()
 	info.lfname = nullptr;
 	if (f_stat(fwFile, &info) != FR_OK)
 	{
+		MessageF("ERROR: Could not find firmware file");
 		debugPrintf("ERROR: Could not find upgrade file!\n");
 		Reset(false);
 	}
@@ -146,6 +165,7 @@ void openBinary()
 	const size_t maxFirmwareSize = IFLASH_SIZE - iapFirmwareSize;
 	if (info.fsize > maxFirmwareSize)
 	{
+		MessageF("ERROR: The firmware file is too big");
 		debugPrintf("ERROR: The upgrade file is too big!\n");
 		Reset(false);
 	}
@@ -153,6 +173,7 @@ void openBinary()
 	// Try to open the file
 	if (f_open(&upgradeBinary, fwFile, FA_OPEN_EXISTING | FA_READ) != FR_OK)
 	{
+		MessageF("ERROR: Could not open firmware file");
 		debugPrintf("ERROR: Could not open upgrade file!\n");
 		Reset(false);
 	}
@@ -160,11 +181,22 @@ void openBinary()
 	debugPrintf("Done\n");
 }
 
+void ShowProgress()
+{
+	size_t percentDone = (100 * (flashPos - IFLASH_ADDR))/(firmwareFlashEnd - IFLASH_ADDR);
+	if (percentDone >= reportNextPercent)
+	{
+		MessageF("Flashing firmware, %u%% completed", percentDone);
+		reportNextPercent += reportPercentIncrement;
+	}
+}
+
 // This implements the actual functionality of this program
 void writeBinary()
 {
 	if (retry > maxRetries)
 	{
+		MessageF("ERROR: Operation failed after %d retries", maxRetries);
 		debugPrintf("ERROR: Operation failed after %d retries!\n", maxRetries);
 		Reset(false);
 	}
@@ -260,8 +292,8 @@ void writeBinary()
 					// Yes - close and delete it
 					closeAndDeleteBinary();
 
-					// Now we just need to fill up the remaining pages with zeros
-					memset(readData + bytesRead, 0, blockReadSize - bytesRead);
+					// Now we just need to fill up the remaining pages with 0xFF
+					memset(readData + bytesRead, 0xFF, blockReadSize - bytesRead);
 				}
 			}
 
@@ -285,6 +317,7 @@ void writeBinary()
 			{
 				bytesWritten += IFLASH_PAGE_SIZE;
 				flashPos += IFLASH_PAGE_SIZE;
+				ShowProgress();
 				if (bytesWritten == blockReadSize && bytesRead != blockReadSize)
 				{
 					memset(readData, 0, IFLASH_PAGE_SIZE);
@@ -299,8 +332,8 @@ void writeBinary()
 			break;
 
 		case FillingZeros:
-			// We've finished the upgrade process, so fill up the remaining space with zeros
-			debugPrintf("Filling 0x%08x - 0x%08x with zeros\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
+			// We've finished the upgrade process, so fill up the remaining space with 0xFF
+			debugPrintf("Filling 0x%08x - 0x%08x with oxFF\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
 
 			cpu_irq_disable();
 #if SAM4E || SAM4S
@@ -316,9 +349,10 @@ void writeBinary()
 			cpu_irq_enable();
 
 			// Verify the written data
-			if (memcmp(readData, reinterpret_cast<void *>(flashPos), IFLASH_PAGE_SIZE) == 0)
+			if (memcmp(readData, reinterpret_cast<const void *>(flashPos), IFLASH_PAGE_SIZE) == 0)
 			{
 				flashPos += IFLASH_PAGE_SIZE;
+				ShowProgress();
 				if (flashPos >= firmwareFlashEnd)
 				{
 					flashPos = IFLASH_ADDR;
@@ -337,11 +371,14 @@ void writeBinary()
 			debugPrintf("Locking 0x%08x - 0x%08x\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
 
 			cpu_irq_disable();
-			if (flash_lock(flashPos, flashPos + IFLASH_PAGE_SIZE - 1, nullptr, nullptr) == FLASH_RC_OK)
+			const bool b = (flash_lock(flashPos, flashPos + IFLASH_PAGE_SIZE - 1, nullptr, nullptr) == FLASH_RC_OK);
+			cpu_irq_enable();
+			if (b)
 			{
 				flashPos += IFLASH_PAGE_SIZE;
 				if (flashPos >= firmwareFlashEnd)
 				{
+					MessageF("Update successful! Rebooting...");
 					debugPrintf("Upgrade successful! Rebooting...\n");
 					Reset(true);
 				}
@@ -351,7 +388,6 @@ void writeBinary()
 			{
 				retry++;
 			}
-			cpu_irq_enable();
 			break;
 	}
 }
@@ -368,6 +404,8 @@ void closeAndDeleteBinary()
 
 void Reset(bool success)
 {
+	delay(1000);				// allow last message to PanelDue to go
+
 	// Only start from bootloader if the firmware couldn't be written entirely
 	if (!success && state >= WritingUpgrade)
 	{
@@ -397,12 +435,27 @@ void debugPrintf(const char *fmt, ...)
 {
 	va_list vargs;
 	va_start(vargs, fmt);
-	vsnprintf(formatBuffer, 64, fmt, vargs);
+	vsnprintf(formatBuffer, ARRAY_SIZE(formatBuffer), fmt, vargs);
 	va_end(vargs);
 
 #if DEBUG
 	sendUSB(CDC_TX, formatBuffer, strlen(formatBuffer));
 #endif
+}
+
+// Write message to aux.
+// The message must not contain any characters that need JSON escaping, such as newline or " or \.
+void MessageF(const char *fmt, ...)
+{
+	va_list vargs;
+	va_start(vargs, fmt);
+	vsnprintf(formatBuffer, ARRAY_SIZE(formatBuffer), fmt, vargs);
+	va_end(vargs);
+
+	Serial.print("{\"message\":\"");
+	Serial.print(formatBuffer);
+	Serial.print("\"}\n");
+	delay(10);
 }
 
 #if DEBUG

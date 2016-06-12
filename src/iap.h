@@ -11,7 +11,7 @@
  * licensed under the terms of the GPL v2.
  */
 
-#include "Arduino.h"
+#include "Core.h"
 
 #if SAM3XA
 #define IFLASH_ADDR			(IFLASH0_ADDR)
@@ -22,7 +22,13 @@ const size_t baudRate = 115200;						// For USB diagnostics
 
 const uint32_t iapFirmwareSize = 0x10000;			// 64 KiB max
 
+#if SAM3XA
 const char *fwFile = "0:/sys/RepRapFirmware.bin";	// Which file shall be used for IAP?
+#endif
+#if SAM4E
+const char *fwFile = "0:/sys/DuetWiFiFirmware.bin";	// Which file shall be used for IAP?
+#endif
+
 const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE - iapFirmwareSize;
 
 // Read and write only 2 KiB of data at once (must be multiple of IFLASH_PAGE_SIZE).
