@@ -27,6 +27,8 @@ FIL upgradeBinary;
 uint32_t readData32[(blockReadSize + 3) / 4];	// should use aligned memory so DMA works well
 char * const readData = reinterpret_cast<char *>(readData32);
 
+const char* fwFile = defaultFwFile;
+
 ProcessState state = Initializing;
 uint32_t flashPos = IFLASH_ADDR;
 
@@ -46,12 +48,13 @@ void debugPrintf(const char *fmt, ...);			// forward declaration
 
 void MessageF(const char *fmt, ...);			// forward declaration
 
+void UrgentInit() { }
 
 /** Arduino routines **/
 
 void setup()
 {
-	Serial.begin(57600);						// set serial port to default PanelDue baud rate
+	SERIAL_AUX_DEVICE.begin(57600);				// set serial port to default PanelDue baud rate
 	MessageF("IAP started");
 
 	debugPrintf("IAP Utility for Duet electronics\n");
@@ -59,6 +62,7 @@ void setup()
 	debugPrintf("Licensed under the terms of the GPLv2\n\n");
 
 	initFilesystem();
+	getFirmwareFileName();
 	openBinary();
 }
 
@@ -67,13 +71,6 @@ void loop()
 	writeBinary();
 }
 
-void watchdogSetup()
-{
-	watchdogEnable(1000);
-	// watchdog is kicked by the Arduino core
-}
-
-
 /** IAP routines **/
 
 void initFilesystem()
@@ -81,7 +78,7 @@ void initFilesystem()
 	debugPrintf("Initialising SD card... ");
 
 	memset(&fs, 0, sizeof(FATFS));
-	sd_mmc_init();
+	sd_mmc_init(SdCardDetectPins, SdWriteProtectPins, SdSpiCSPins);
 	delay_ms(20);
 
 	size_t startTime = millis();
@@ -147,6 +144,24 @@ void initFilesystem()
 	}
 }
 
+// Determine the name of the firmware file we need to flash
+// Later releases of DuetWiFiFirmware and all releases of DuetEthernetFirmware put the initial stack pointer
+// a little below the top of RAM and store the firmware filename just above the stack
+void getFirmwareFileName()
+{
+	const uint32_t vtab = SCB->VTOR & SCB_VTOR_TBLOFF_Msk;
+	const uint32_t stackTop = *reinterpret_cast<const uint32_t*>(vtab);
+	const char* const fwFilePtr = reinterpret_cast<const char*>(stackTop);
+	for (size_t i = 0; fwFilePrefix[i] != 0; ++i)
+	{
+		if (fwFilePtr[i] != fwFilePrefix[i])
+		{
+			return;			// we didn't find the expected prefix, so a filename wasmn't passed
+		}
+	}
+	fwFile = fwFilePtr;		// replace default filename by the one we were passed
+}
+
 // Open the upgrade binary file so we can use it for flashing
 void openBinary()
 {
@@ -157,7 +172,7 @@ void openBinary()
 	info.lfname = nullptr;
 	if (f_stat(fwFile, &info) != FR_OK)
 	{
-		MessageF("ERROR: Could not find firmware file");
+		MessageF("ERROR: Could not find file %s", fwFile);
 		debugPrintf("ERROR: Could not find upgrade file!\n");
 		Reset(false);
 	}
@@ -165,7 +180,7 @@ void openBinary()
 	const size_t maxFirmwareSize = IFLASH_SIZE - iapFirmwareSize;
 	if (info.fsize > maxFirmwareSize)
 	{
-		MessageF("ERROR: The firmware file is too big");
+		MessageF("ERROR: File %s is too big", fwFile);
 		debugPrintf("ERROR: The upgrade file is too big!\n");
 		Reset(false);
 	}
@@ -173,11 +188,12 @@ void openBinary()
 	// Try to open the file
 	if (f_open(&upgradeBinary, fwFile, FA_OPEN_EXISTING | FA_READ) != FR_OK)
 	{
-		MessageF("ERROR: Could not open firmware file");
+		MessageF("ERROR: Could not open file %s", fwFile);
 		debugPrintf("ERROR: Could not open upgrade file!\n");
 		Reset(false);
 	}
 
+	MessageF("File %s opened", fwFile);
 	debugPrintf("Done\n");
 }
 
@@ -245,6 +261,7 @@ void writeBinary()
 		case ErasingFlash:
 			debugPrintf("Erasing 0x%08x\n", flashPos);
 			// Deal with varying size sectors on the SAM4E
+			// There are two 8K sectors, then one 48K sector, then seven 64K sectors
 			if (flash_erase_sector(flashPos) == FLASH_RC_OK)
 			{
 				if (flashPos - IFLASH_ADDR < 16 * 1024)
@@ -452,9 +469,9 @@ void MessageF(const char *fmt, ...)
 	vsnprintf(formatBuffer, ARRAY_SIZE(formatBuffer), fmt, vargs);
 	va_end(vargs);
 
-	Serial.print("{\"message\":\"");
-	Serial.print(formatBuffer);
-	Serial.print("\"}\n");
+	SERIAL_AUX_DEVICE.print("{\"message\":\"");
+	SERIAL_AUX_DEVICE.print(formatBuffer);
+	SERIAL_AUX_DEVICE.print("\"}\n");
 	delay(10);
 }
 

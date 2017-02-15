@@ -14,8 +14,8 @@
 #include "Core.h"
 
 #if SAM3XA
-#define IFLASH_ADDR			(IFLASH0_ADDR)
-#define IFLASH_PAGE_SIZE	(IFLASH1_PAGE_SIZE)
+# define IFLASH_ADDR			(IFLASH0_ADDR)
+# define IFLASH_PAGE_SIZE	(IFLASH1_PAGE_SIZE)
 #endif
 
 const size_t baudRate = 115200;						// For USB diagnostics
@@ -23,10 +23,33 @@ const size_t baudRate = 115200;						// For USB diagnostics
 const uint32_t iapFirmwareSize = 0x10000;			// 64 KiB max
 
 #if SAM3XA
-const char *fwFile = "0:/sys/RepRapFirmware.bin";	// Which file shall be used for IAP?
+# ifdef __RADDS__
+#  define SERIAL_AUX_DEVICE Serial1
+const size_t NumSdCards = 2;
+const Pin SdCardDetectPins[NumSdCards] = { 14, 14 };
+const Pin SdWriteProtectPins[NumSdCards] = { NoPin, NoPin };
+const Pin SdSpiCSPins[2] = { 87, 77 };
+const char * const defaultFwFile = "0:/sys/RepRapFirmware-RADDS.bin";	// Which file shall be used for IAP?
+const char * const fwFilePrefix = "0:/sys/RepRap";
+# else
+#  define SERIAL_AUX_DEVICE Serial
+const size_t NumSdCards = 2;
+const Pin SdCardDetectPins[NumSdCards] = {13, NoPin};
+const Pin SdWriteProtectPins[NumSdCards] = {NoPin, NoPin};
+const Pin SdSpiCSPins[1] = {67};
+const char * const defaultFwFile = "0:/sys/RepRapFirmware.bin";			// Which file shall be used for IAP?
+const char * const fwFilePrefix = "0:/sys/RepRap";
+# endif
 #endif
+
 #if SAM4E
-const char *fwFile = "0:/sys/DuetWiFiFirmware.bin";	// Which file shall be used for IAP?
+# define SERIAL_AUX_DEVICE Serial
+const size_t NumSdCards = 2;
+const Pin SdCardDetectPins[NumSdCards] = {53, NoPin};
+const Pin SdWriteProtectPins[NumSdCards] = {NoPin, NoPin};
+const Pin SdSpiCSPins[1] = {56};
+const char * const defaultFwFile = "0:/sys/DuetWiFiFirmware.bin";		// Which file shall we default to used for IAP?
+const char * const fwFilePrefix = "0:/sys/Duet";
 #endif
 
 const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE - iapFirmwareSize;
@@ -52,6 +75,7 @@ enum ProcessState
 
 
 void initFilesystem();
+void getFirmwareFileName();
 void openBinary();
 void writeBinary();
 void closeAndDeleteBinary();
