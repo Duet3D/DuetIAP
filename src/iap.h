@@ -31,6 +31,15 @@ const Pin SdWriteProtectPins[NumSdCards] = { NoPin, NoPin };
 const Pin SdSpiCSPins[2] = { 87, 77 };
 const char * const defaultFwFile = "0:/sys/RepRapFirmware-RADDS.bin";	// Which file shall be used for IAP?
 const char * const fwFilePrefix = "0:/sys/RepRap";
+# elif defined(__ALLIGATOR__)
+#  define SERIAL_AUX_DEVICE Serial1
+const size_t NumSdCards = 1;
+const Pin SdCardDetectPins[NumSdCards] = { 87 };
+const Pin SdWriteProtectPins[NumSdCards] = { NoPin };
+const Pin SdSpiCSPins[2] = { 77 };
+const char * const defaultFwFile = "0:/sys/RepRapFirmware-Alligator.bin";	// Which file shall be used for IAP?
+const char * const fwFilePrefix = "0:/sys/RepRap";
+
 # else
 #  define SERIAL_AUX_DEVICE Serial
 const size_t NumSdCards = 2;
