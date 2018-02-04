@@ -41,8 +41,6 @@
  *
  */
 #include "compiler.h"
-#include "rtc.h"
-
 
 uint32_t get_fattime(void);
 /**

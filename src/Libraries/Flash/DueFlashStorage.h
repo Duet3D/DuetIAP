@@ -18,13 +18,21 @@ Further modified up by David Crocker
 #include "Core.h"
 #include "flash_efc.h"
 
-#ifdef DUET_NG
+#if SAM4E
 
 // 1Kb of data
 #define FLASH_DATA_LENGTH   ((IFLASH_PAGE_SIZE/sizeof(byte))*4)
 
 // Choose a start address close to the top of the Flash 1 memory space
 #define  FLASH_START  ((uint8_t *)(IFLASH_ADDR + IFLASH_SIZE - FLASH_DATA_LENGTH))
+
+#elif SAM4S
+
+// 1Kb of data
+#define FLASH_DATA_LENGTH   ((IFLASH0_PAGE_SIZE/sizeof(byte))*4)
+
+// Choose a start address close to the top of the Flash 1 memory space
+#define  FLASH_START  ((uint8_t *)(IFLASH0_ADDR + IFLASH0_SIZE - FLASH_DATA_LENGTH))
 
 #else
 

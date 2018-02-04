@@ -9,8 +9,10 @@ void DueFlashStorage::read(uint32_t address, void *data, uint32_t dataLength)
 bool DueFlashStorage::write(uint32_t address, const void *data, uint32_t dataLength)
 {
 	if ((uint32_t)FLASH_START + address <
-#ifdef DUET_NG
+#if SAM4E
 					IFLASH_ADDR
+#elif SAM4S
+					IFLASH0_ADDR
 #else
 					IFLASH1_ADDR
 #endif
@@ -21,8 +23,10 @@ bool DueFlashStorage::write(uint32_t address, const void *data, uint32_t dataLen
 	}
 
 	if ((uint32_t)FLASH_START + address + dataLength >
-#ifdef DUET_NG
+#if SAM4E
 					IFLASH_ADDR + IFLASH_SIZE
+#elif SAM4S
+					IFLASH0_ADDR + IFLASH0_SIZE
 #else
 					IFLASH1_ADDR + IFLASH1_SIZE
 #endif

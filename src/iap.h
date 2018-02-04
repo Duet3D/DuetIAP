@@ -13,8 +13,11 @@
 
 #include "Core.h"
 
-#if SAM3XA
-# define IFLASH_ADDR			(IFLASH0_ADDR)
+#if SAM4S
+# define IFLASH_ADDR		(IFLASH0_ADDR)
+# define IFLASH_PAGE_SIZE	(IFLASH0_PAGE_SIZE)
+#elif SAM3XA
+# define IFLASH_ADDR		(IFLASH0_ADDR)
 # define IFLASH_PAGE_SIZE	(IFLASH1_PAGE_SIZE)
 #endif
 
@@ -39,11 +42,10 @@ const Pin SdWriteProtectPins[NumSdCards] = { NoPin };
 const Pin SdSpiCSPins[2] = { 77 };
 const char * const defaultFwFile = "0:/sys/RepRapFirmware-Alligator.bin";	// Which file shall be used for IAP?
 const char * const fwFilePrefix = "0:/sys/RepRap";
-
 # else
 #  define SERIAL_AUX_DEVICE Serial
 const size_t NumSdCards = 2;
-const Pin SdCardDetectPins[NumSdCards] = {13, NoPin};
+const Pin SdCardDetectPins[NumSdCards] = {NoPin, NoPin};				// Don't use the Card Detect pin on the Duet 085
 const Pin SdWriteProtectPins[NumSdCards] = {NoPin, NoPin};
 const Pin SdSpiCSPins[1] = {67};
 const char * const defaultFwFile = "0:/sys/RepRapFirmware.bin";			// Which file shall be used for IAP?
@@ -58,6 +60,16 @@ const Pin SdCardDetectPins[NumSdCards] = {53, NoPin};
 const Pin SdWriteProtectPins[NumSdCards] = {NoPin, NoPin};
 const Pin SdSpiCSPins[1] = {56};
 const char * const defaultFwFile = "0:/sys/DuetWiFiFirmware.bin";		// Which file shall we default to used for IAP?
+const char * const fwFilePrefix = "0:/sys/Duet";
+#endif
+
+#if SAM4S
+# define SERIAL_AUX_DEVICE Serial
+const size_t NumSdCards = 2;
+const Pin SdCardDetectPins[NumSdCards] = {53, NoPin};					// TODO fix this!
+const Pin SdWriteProtectPins[NumSdCards] = {NoPin, NoPin};
+const Pin SdSpiCSPins[1] = {56};
+const char * const defaultFwFile = "0:/sys/DuetMaestroFirmware.bin";	// Which file shall we default to used for IAP?
 const char * const fwFilePrefix = "0:/sys/Duet";
 #endif
 
