@@ -21,8 +21,16 @@
 
 #define DEBUG	0
 
+#if SAM4E
+
 // Digital pin number to turn the IR LED on (high) or off (low), also controls the DIAG LED
 const Pin Z_PROBE_MOD_PIN = 34;
+const uint32_t LedOnOffMillis = 100;
+
+uint32_t lastLedMillis;
+bool ledIsOn;
+
+#endif
 
 FATFS fs;
 FIL upgradeBinary;
@@ -42,9 +50,28 @@ size_t reportNextPercent = reportPercentIncrement;
 
 char formatBuffer[100];
 
-inline void delay_ms(uint32_t ms)
+void checkLed()
 {
-	delay(ms);
+#if SAM4E
+
+	const uint32_t now = millis();
+	if (now - lastLedMillis >= LedOnOffMillis)
+	{
+		ledIsOn = !ledIsOn;
+		digitalWrite(Z_PROBE_MOD_PIN, ledIsOn);
+		lastLedMillis = now;
+	}
+#endif
+}
+
+// Our own version of delay() that keeps the LED up to date
+void delay_ms(uint32_t ms)
+{
+	const uint32_t startTime = millis();
+	do
+	{
+		checkLed();
+	} while (millis() - startTime < ms);
 }
 
 void debugPrintf(const char *fmt, ...);			// forward declaration
@@ -57,7 +84,12 @@ void UrgentInit() { }
 
 void setup()
 {
+#if SAM4E
 	digitalWrite(Z_PROBE_MOD_PIN, true);		// turn the LED on
+	ledIsOn = true;
+	lastLedMillis = millis();
+#endif
+
 	SERIAL_AUX_DEVICE.begin(57600);				// set serial port to default PanelDue baud rate
 	MessageF("IAP started");
 
@@ -72,6 +104,7 @@ void setup()
 
 void loop()
 {
+	checkLed();
 	writeBinary();
 }
 
@@ -139,7 +172,7 @@ void initFilesystem()
 		return;
 	}
 
-	int mounted = f_mount(0, &fs);
+	const int mounted = f_mount(0, &fs);
 	if (mounted != FR_OK)
 	{
 		MessageF("SD card mount failed, code %d", mounted);
@@ -203,7 +236,7 @@ void openBinary()
 
 void ShowProgress()
 {
-	size_t percentDone = (100 * (flashPos - IFLASH_ADDR))/(firmwareFlashEnd - IFLASH_ADDR);
+	const size_t percentDone = (100 * (flashPos - IFLASH_ADDR))/(firmwareFlashEnd - IFLASH_ADDR);
 	if (percentDone >= reportNextPercent)
 	{
 		MessageF("Flashing firmware, %u%% completed", percentDone);
@@ -430,8 +463,6 @@ void closeAndDeleteBinary()
 
 void Reset(bool success)
 {
-	delay(1000);				// allow last message to PanelDue to go
-
 	// Only start from bootloader if the firmware couldn't be written entirely
 	if (!success && state >= WritingUpgrade)
 	{
@@ -448,6 +479,12 @@ void Reset(bool success)
 
 		cpu_irq_enable();
 	}
+
+	delay_ms(500);				// allow last message to PanelDue to go
+
+#if SAM4E
+	digitalWrite(Z_PROBE_MOD_PIN, false);		// turn the LED off
+#endif
 
 	// Reboot
 	rstc_start_software_reset(RSTC);
@@ -480,7 +517,7 @@ void MessageF(const char *fmt, ...)
 	SERIAL_AUX_DEVICE.print("{\"message\":\"");
 	SERIAL_AUX_DEVICE.print(formatBuffer);
 	SERIAL_AUX_DEVICE.print("\"}\n");
-	delay(10);
+	delay_ms(10);
 }
 
 // The following functions are called by the startup code in CoreNG.
