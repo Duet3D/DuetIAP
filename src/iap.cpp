@@ -21,18 +21,6 @@
 
 #define DEBUG	0
 
-#if SAM4E
-
-// Digital pin number to turn the IR LED on (high) or off (low), also controls the DIAG LED
-const Pin Z_PROBE_MOD_PIN = 34;
-
-#elif SAM4S
-
-// Digital pin number to turn the IR LED on (high) or off (low), also controls the DIAG LED
-const Pin Z_PROBE_MOD_PIN = 62;
-
-#endif
-
 #if SAM4E || SAM4S
 
 const uint32_t LedOnOffMillis = 100;
@@ -67,7 +55,7 @@ void checkLed()
 	if (now - lastLedMillis >= LedOnOffMillis)
 	{
 		ledIsOn = !ledIsOn;
-		digitalWrite(Z_PROBE_MOD_PIN, ledIsOn);
+		digitalWrite(DiagLedPin, ledIsOn);
 		lastLedMillis = now;
 	}
 #endif
@@ -94,7 +82,7 @@ void UrgentInit() { }
 void setup()
 {
 #if SAM4E || SAM4S
-	digitalWrite(Z_PROBE_MOD_PIN, true);		// turn the LED on
+	digitalWrite(DiagLedPin, true);		// turn the LED on
 	ledIsOn = true;
 	lastLedMillis = millis();
 #endif
@@ -492,7 +480,7 @@ void Reset(bool success)
 	delay_ms(500);				// allow last message to PanelDue to go
 
 #if SAM4E || SAM4S
-	digitalWrite(Z_PROBE_MOD_PIN, false);		// turn the LED off
+	digitalWrite(DiagLedPin, false);		// turn the LED off
 #endif
 
 	// Reboot
