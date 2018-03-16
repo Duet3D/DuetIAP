@@ -21,7 +21,7 @@ Further modified up by David Crocker
 #if SAM4E
 
 // 1Kb of data
-#define FLASH_DATA_LENGTH   ((IFLASH_PAGE_SIZE/sizeof(byte))*4)
+#define FLASH_DATA_LENGTH   ((IFLASH_PAGE_SIZE/sizeof(uint8_t))*4)
 
 // Choose a start address close to the top of the Flash 1 memory space
 #define  FLASH_START  ((uint8_t *)(IFLASH_ADDR + IFLASH_SIZE - FLASH_DATA_LENGTH))
@@ -29,7 +29,7 @@ Further modified up by David Crocker
 #elif SAM4S
 
 // 1Kb of data
-#define FLASH_DATA_LENGTH   ((IFLASH0_PAGE_SIZE/sizeof(byte))*4)
+#define FLASH_DATA_LENGTH   ((IFLASH0_PAGE_SIZE/sizeof(uint8_t))*4)
 
 // Choose a start address close to the top of the Flash 1 memory space
 #define  FLASH_START  ((uint8_t *)(IFLASH0_ADDR + IFLASH0_SIZE - FLASH_DATA_LENGTH))
@@ -37,7 +37,7 @@ Further modified up by David Crocker
 #else
 
 // 1Kb of data
-#define FLASH_DATA_LENGTH   ((IFLASH1_PAGE_SIZE/sizeof(byte))*4)
+#define FLASH_DATA_LENGTH   ((IFLASH1_PAGE_SIZE/sizeof(uint8_t))*4)
 
 // Choose a start address close to the top of the Flash 1 memory space
 #define  FLASH_START  ((uint8_t *)(IFLASH1_ADDR + IFLASH1_SIZE - FLASH_DATA_LENGTH))
