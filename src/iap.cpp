@@ -75,14 +75,14 @@ void debugPrintf(const char *fmt, ...);			// forward declaration
 
 void MessageF(const char *fmt, ...);			// forward declaration
 
-void UrgentInit() { }
+extern "C" void UrgentInit() { }
 
 /** Arduino routines **/
 
-void setup()
+extern "C" void AppMain()
 {
 #if SAM4E || SAM4S
-	digitalWrite(DiagLedPin, true);		// turn the LED on
+	digitalWrite(DiagLedPin, true);				// turn the LED on
 	ledIsOn = true;
 	lastLedMillis = millis();
 #endif
@@ -97,12 +97,11 @@ void setup()
 	initFilesystem();
 	getFirmwareFileName();
 	openBinary();
-}
-
-void loop()
-{
-	checkLed();
-	writeBinary();
+	for (;;)
+	{
+		checkLed();
+		writeBinary();
+	}
 }
 
 /** IAP routines **/
