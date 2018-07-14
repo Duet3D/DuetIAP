@@ -184,8 +184,8 @@ typedef enum {
 	FR_NO_FILE,				/* (4) Could not find the file */
 	FR_NO_PATH,				/* (5) Could not find the path */
 	FR_INVALID_NAME,		/* (6) The path name format is invalid */
-	FR_DENIED,				/* (7) Acces denied due to prohibited access or directory full */
-	FR_EXIST,				/* (8) Acces denied due to prohibited access */
+	FR_DENIED,				/* (7) Access denied due to prohibited access or directory full */
+	FR_EXIST,				/* (8) Access denied due to prohibited access */
 	FR_INVALID_OBJECT,		/* (9) The file/directory object is invalid */
 	FR_WRITE_PROTECTED,		/* (10) The physical drive is write protected */
 	FR_INVALID_DRIVE,		/* (11) The logical drive number is invalid */
