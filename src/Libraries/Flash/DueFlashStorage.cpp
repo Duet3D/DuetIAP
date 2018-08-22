@@ -9,7 +9,7 @@ void DueFlashStorage::read(uint32_t address, void *data, uint32_t dataLength)
 bool DueFlashStorage::write(uint32_t address, const void *data, uint32_t dataLength)
 {
 	if ((uint32_t)FLASH_START + address <
-#if SAM4E
+#if SAM4E || SAME70
 					IFLASH_ADDR
 #elif SAM4S
 					IFLASH0_ADDR
@@ -23,7 +23,7 @@ bool DueFlashStorage::write(uint32_t address, const void *data, uint32_t dataLen
 	}
 
 	if ((uint32_t)FLASH_START + address + dataLength >
-#if SAM4E
+#if SAM4E || SAME70
 					IFLASH_ADDR + IFLASH_SIZE
 #elif SAM4S
 					IFLASH0_ADDR + IFLASH0_SIZE

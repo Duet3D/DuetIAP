@@ -21,7 +21,7 @@
 
 #define DEBUG	0
 
-#if SAM4E || SAM4S
+#if SAM4E || SAM4S || SAME70
 
 const uint32_t LedOnOffMillis = 100;
 
@@ -50,7 +50,7 @@ char formatBuffer[100];
 
 void checkLed()
 {
-#if SAM4E || SAM4S
+#if SAM4E || SAM4S || SAME70
 	const uint32_t now = millis();
 	if (now - lastLedMillis >= LedOnOffMillis)
 	{
@@ -81,7 +81,7 @@ extern "C" void UrgentInit() { }
 
 extern "C" void AppMain()
 {
-#if SAM4E || SAM4S
+#if SAM4E || SAM4S || SAME70
 	digitalWrite(DiagLedPin, true);				// turn the LED on
 	ledIsOn = true;
 	lastLedMillis = millis();
@@ -189,7 +189,7 @@ void getFirmwareFileName()
 	{
 		if (fwFilePtr[i] != fwFilePrefix[i])
 		{
-			return;			// we didn't find the expected prefix, so a filename wasmn't passed
+			return;			// we didn't find the expected prefix, so a filename wasn't passed
 		}
 	}
 	fwFile = fwFilePtr;		// replace default filename by the one we were passed
@@ -257,6 +257,7 @@ void writeBinary()
 	switch (state)
 	{
 	case Initializing:
+		MessageF("Unlocking flash");	//TEMP
 		state = UnlockingFlash;
 		// no break
 	case UnlockingFlash:
@@ -281,7 +282,8 @@ void writeBinary()
 		if (flashPos >= firmwareFlashEnd)
 		{
 			flashPos = IFLASH_ADDR;
-#if SAM4E || SAM4S
+#if SAM4E || SAM4S || SAME70
+			MessageF("Erasing flash");	//TEMP
 			state = ErasingFlash;
 #else
 			bytesWritten = blockReadSize;
@@ -290,13 +292,16 @@ void writeBinary()
 		}
 		break;
 
-#if SAM4E || SAM4S
+#if SAM4E || SAM4S || SAME70
 	case ErasingFlash:
 		debugPrintf("Erasing 0x%08x\n", flashPos);
-		// Deal with varying size sectors on the SAM4E
-		// There are two 8K sectors, then one 48K sector, then seven 64K sectors
 		if (flash_erase_sector(flashPos) == FLASH_RC_OK)
 		{
+			retry = 0;
+
+# if SAM4E || SAM4S
+			// Deal with varying size sectors on the SAM4E
+			// There are two 8K sectors, then one 48K sector, then seven 64K sectors
 			if (flashPos - IFLASH_ADDR < 16 * 1024)
 			{
 				flashPos += 8 * 1024;
@@ -309,6 +314,26 @@ void writeBinary()
 			{
 				flashPos += 64 * 1024;
 			}
+#elif SAME70
+			// Deal with varying size sectors on the SAME70
+			// There are two 8K sectors, then one 112K sector, then he rest are 128K sectors
+			if (flashPos - IFLASH_ADDR < 16 * 1024)
+			{
+				flashPos += 8 * 1024;
+			}
+			else if (flashPos - IFLASH_ADDR == 16 * 1024)
+			{
+				flashPos += 112 * 1024;
+			}
+			else
+			{
+				flashPos += 128 * 1024;
+			}
+#endif
+		}
+		else
+		{
+			++retry;
 		}
 		if (flashPos >= firmwareFlashEnd)
 		{
@@ -350,7 +375,7 @@ void writeBinary()
 		// Write another page
 		debugPrintf("Writing 0x%08x - 0x%08x\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
 		cpu_irq_disable();
-#if SAM4E || SAM4S
+#if SAM4E || SAM4S || SAME70
 		if (flash_write(flashPos, readData + bytesWritten, IFLASH_PAGE_SIZE, 0) != FLASH_RC_OK)
 #else
 		if (flash_write(flashPos, readData + bytesWritten, IFLASH_PAGE_SIZE, 1) != FLASH_RC_OK)
@@ -386,7 +411,7 @@ void writeBinary()
 		debugPrintf("Filling 0x%08x - 0x%08x with oxFF\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
 
 		cpu_irq_disable();
-#if SAM4E || SAM4S
+#if SAM4E || SAM4S || SAME70
 		if (flash_write(flashPos, readData, IFLASH_PAGE_SIZE, 0) != FLASH_RC_OK)
 #else
 		if (flash_write(flashPos, readData, IFLASH_PAGE_SIZE, 1) != FLASH_RC_OK)
@@ -478,7 +503,7 @@ void Reset(bool success)
 
 	delay_ms(500);				// allow last message to PanelDue to go
 
-#if SAM4E || SAM4S
+#if SAM4E || SAM4S || SAME70
 	digitalWrite(DiagLedPin, false);		// turn the LED off
 #endif
 

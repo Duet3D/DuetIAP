@@ -18,7 +18,7 @@ Further modified up by David Crocker
 #include "Core.h"
 #include "flash_efc.h"
 
-#if SAM4E
+#if SAM4E || SAME70
 
 // 1Kb of data
 #define FLASH_DATA_LENGTH   ((IFLASH_PAGE_SIZE/sizeof(uint8_t))*4)

@@ -23,8 +23,6 @@
 
 const size_t baudRate = 115200;						// For USB diagnostics
 
-const uint32_t iapFirmwareSize = 0x10000;			// 64 KiB max
-
 #if SAM3XA
 # ifdef __RADDS__
 #  define SERIAL_AUX_DEVICE Serial1
@@ -75,7 +73,26 @@ const char * const defaultFwFile = "0:/sys/DuetMaestroFirmware.bin";	// Which fi
 const char * const fwFilePrefix = "0:/sys/Duet";
 #endif
 
+#if SAME70
+# define SERIAL_AUX_DEVICE Serial
+const size_t NumSdCards = 2;
+const Pin SdCardDetectPins[NumSdCards] = {32, NoPin};
+const Pin SdWriteProtectPins[NumSdCards] = {NoPin, NoPin};
+const Pin SdSpiCSPins[1] = {NoPin};
+const Pin DiagLedPin = NoPin;
+const char * const defaultFwFile = "0:/sys/SAME70Firmware.bin";		// Which file shall we default to used for IAP?
+const char * const fwFilePrefix = "0:/sys/SAME70";
+
+const uint32_t iapFirmwareSize = 0x20000;			// 128 KiB max (SAME70 has 128kb flash sectors so we can't erase a smaller amount)
+const uint32_t firmwareFlashEnd = 0x004E0000;		// iape70 is designed to work with >= 1Mbyte flash
+
+#else
+
+const uint32_t iapFirmwareSize = 0x10000;			// 64 KiB max
 const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE - iapFirmwareSize;
+
+#endif
+
 
 // Read and write only 2 KiB of data at once (must be multiple of IFLASH_PAGE_SIZE).
 // Unfortunately we cannot increase this value further, because f_read() would mess up data
@@ -88,7 +105,7 @@ enum ProcessState
 {
 	Initializing,
 	UnlockingFlash,
-#if SAM4E || SAM4S
+#if SAM4E || SAM4S || SAME70
 	ErasingFlash,
 #endif
 	WritingUpgrade,
