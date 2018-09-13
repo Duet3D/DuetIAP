@@ -76,17 +76,30 @@ const char * const fwFilePrefix = "0:/sys/Duet";
 #if SAME70
 # define SERIAL_AUX_DEVICE Serial
 const size_t NumSdCards = 2;
-const Pin SdCardDetectPins[NumSdCards] = {32, NoPin};
-const Pin SdWriteProtectPins[NumSdCards] = {NoPin, NoPin};
-const Pin SdSpiCSPins[1] = {NoPin};
+
+# ifdef SAME70XPLD
+
+const Pin SdCardDetectPins[NumSdCards] = { PORTC_PIN(16), NoPin };
 const Pin DiagLedPin = NoPin;
-const char * const defaultFwFile = "0:/sys/SAME70Firmware.bin";		// Which file shall we default to used for IAP?
-const char * const fwFilePrefix = "0:/sys/SAME70";
+const char * const defaultFwFile = "0:/sys/SAME70XPLDFirmware.bin";		// Which file shall we default to used for IAP?
+const char * const fwFilePrefix = "0:/sys/SAME70XPLD";
+
+# else
+
+const Pin SdCardDetectPins[NumSdCards] = { PORTA_PIN(6), NoPin };
+const Pin DiagLedPin = PORTC_PIN(20);
+const char * const defaultFwFile = "0:/sys/Duet3Firmware.bin";			// Which file shall we default to used for IAP?
+const char * const fwFilePrefix = "0:/sys/Duet3";
+
+# endif
+
+const Pin SdWriteProtectPins[NumSdCards] = { NoPin, NoPin };
+const Pin SdSpiCSPins[1] = { NoPin };
 
 const uint32_t iapFirmwareSize = 0x20000;			// 128 KiB max (SAME70 has 128kb flash sectors so we can't erase a smaller amount)
 const uint32_t firmwareFlashEnd = 0x004E0000;		// iape70 is designed to work with >= 1Mbyte flash
 
-#else
+#else	// not a SAME70 variant
 
 const uint32_t iapFirmwareSize = 0x10000;			// 64 KiB max
 const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE - iapFirmwareSize;
