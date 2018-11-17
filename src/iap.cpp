@@ -23,6 +23,7 @@
 
 #if SAM4E || SAM4S || SAME70
 
+// Later Duets have a diagnostic LED, which we flash regularly to indicate activity
 const uint32_t LedOnOffMillis = 100;
 
 uint32_t lastLedMillis;
@@ -74,6 +75,16 @@ void delay_ms(uint32_t ms)
 void debugPrintf(const char *fmt, ...);			// forward declaration
 
 void MessageF(const char *fmt, ...);			// forward declaration
+
+// This intercepts the 1ms system tick
+extern "C" void sysTickHook()
+{
+	wdt_restart(WDT);							// kick the watchdog
+
+#if SAM4E || SAME70
+	rswdt_restart(RSWDT);						// kick the secondary watchdog
+#endif
+}
 
 extern "C" void UrgentInit() { }
 
@@ -189,7 +200,7 @@ void getFirmwareFileName()
 	{
 		if (fwFilePtr[i] != fwFilePrefix[i])
 		{
-			return;			// we didn't find the expected prefix, so a filename wasn't passed
+			return;			// we didn't find the expected prefix, so no filename was passed
 		}
 	}
 	fwFile = fwFilePtr;		// replace default filename by the one we were passed
@@ -476,6 +487,7 @@ void closeAndDeleteBinary()
 #if 1
 	// DC42: we no longer delete the binary. This allows the same SD card to be used repeatedly to upload firmware
 	// to multiple Duets without needing to copy the file back on to the SD card after each one.
+	// It would also allow us to reduce memory usage by compiling FatFS in read-only mode.
 #else
 	// Unlink (delete) the file
 	f_unlink(fwFile);
@@ -556,8 +568,7 @@ extern "C" void TWI1_Handler()
 }
 
 #if DEBUG
-// We have to use our own USB transmit function here, because the Arduino core will
-// assume that the USB line is closed its equivalent is called...
+// We have to use our own USB transmit function here, because the core will assume that the USB line is closed
 void sendUSB(uint32_t ep, const void* d, uint32_t len)
 {
     uint32_t n;
