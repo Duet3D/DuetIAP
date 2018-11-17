@@ -3,6 +3,7 @@
 	<name>DuetIAP</name>
 	<comment></comment>
 	<projects>
+		<project>CoreNG</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
