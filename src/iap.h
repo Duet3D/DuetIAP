@@ -79,15 +79,15 @@ const size_t NumSdCards = 2;
 
 # ifdef SAME70XPLD
 
-const Pin SdCardDetectPins[NumSdCards] = { PORTC_PIN(16), NoPin };
+const Pin SdCardDetectPins[NumSdCards] = { PortCPin(16), NoPin };
 const Pin DiagLedPin = NoPin;
 const char * const defaultFwFile = "0:/sys/SAME70XPLDFirmware.bin";		// Which file shall we default to used for IAP?
 const char * const fwFilePrefix = "0:/sys/SAME70XPLD";
 
 # else
 
-const Pin SdCardDetectPins[NumSdCards] = { PORTA_PIN(6), NoPin };
-const Pin DiagLedPin = PORTC_PIN(20);
+const Pin SdCardDetectPins[NumSdCards] = { PortAPin(6), NoPin };
+const Pin DiagLedPin = PortCPin(20);
 const char * const defaultFwFile = "0:/sys/Duet3Firmware.bin";			// Which file shall we default to used for IAP?
 const char * const fwFilePrefix = "0:/sys/Duet3";
 

@@ -34,7 +34,7 @@ bool ledIsOn;
 FATFS fs;
 FIL upgradeBinary;
 
-uint32_t readData32[(blockReadSize + 3) / 4];	// should use aligned memory so DMA works well
+uint32_t readData32[(blockReadSize + 3) / 4];	// use aligned memory so DMA works well
 char * const readData = reinterpret_cast<char *>(readData32);
 
 const char* fwFile = defaultFwFile;
@@ -73,12 +73,13 @@ void delay_ms(uint32_t ms)
 }
 
 void debugPrintf(const char *fmt, ...);			// forward declaration
-
 void MessageF(const char *fmt, ...);			// forward declaration
 
-// This intercepts the 1ms system tick
-extern "C" void sysTickHook()
+extern "C" void UrgentInit() { }
+
+extern "C" void SysTick_Handler(void)
 {
+	CoreSysTick();
 	wdt_restart(WDT);							// kick the watchdog
 
 #if SAM4E || SAME70
@@ -86,12 +87,13 @@ extern "C" void sysTickHook()
 #endif
 }
 
-extern "C" void UrgentInit() { }
-
-/** Arduino routines **/
+extern "C" void SVC_Handler() { for (;;) {} }
+extern "C" void PendSV_Handler() { for (;;) {} }
 
 extern "C" void AppMain()
 {
+	SysTickInit();
+
 #if SAM4E || SAM4S || SAME70
 	digitalWrite(DiagLedPin, true);				// turn the LED on
 	ledIsOn = true;
