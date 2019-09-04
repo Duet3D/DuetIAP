@@ -2,7 +2,7 @@
  *
  * This application is first written by RepRapFirmware to the end of the second
  * Flash bank and then started by RepRapFirmware.
- * 
+ *
  * Once this program is loaded, it performs in-application programming by
  * reading the new firmware binary from the SD card and replaces the corresponding
  * Flash content sector by sector.
@@ -329,7 +329,7 @@ void writeBinary()
 			}
 #elif SAME70
 			// Deal with varying size sectors on the SAME70
-			// There are two 8K sectors, then one 112K sector, then he rest are 128K sectors
+			// There are two 8K sectors, then one 112K sector, then the rest are 128K sectors
 			if (flashPos - IFLASH_ADDR < 16 * 1024)
 			{
 				flashPos += 8 * 1024;
@@ -363,7 +363,17 @@ void writeBinary()
 		{
 			debugPrintf("Reading %u bytes from the file\n", blockReadSize);
 
-			FRESULT result = f_read(&upgradeBinary, readData, blockReadSize, &bytesRead);
+			// Seek to the correct place in case we are doing retries
+			FRESULT result = f_lseek(&upgradeBinary, flashPos - IFLASH_ADDR);
+			if (result != FR_OK)
+			{
+				debugPrintf("WARNING: f_lseek returned err %d\n", result);
+				delay_ms(100);
+				retry++;
+				break;
+			}
+
+			result = f_read(&upgradeBinary, readData, blockReadSize, &bytesRead);
 			if (result != FR_OK)
 			{
 				debugPrintf("WARNING: f_read returned err %d\n", result);
@@ -386,95 +396,103 @@ void writeBinary()
 		}
 
 		// Write another page
-		debugPrintf("Writing 0x%08x - 0x%08x\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
-		cpu_irq_disable();
+		{
+			debugPrintf("Writing 0x%08x - 0x%08x\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
+			cpu_irq_disable();
+			const uint32_t rc =
 #if SAM4E || SAM4S || SAME70
-		if (flash_write(flashPos, readData + bytesWritten, IFLASH_PAGE_SIZE, 0) != FLASH_RC_OK)
+								flash_write(flashPos, readData + bytesWritten, IFLASH_PAGE_SIZE, 0);
 #else
-		if (flash_write(flashPos, readData + bytesWritten, IFLASH_PAGE_SIZE, 1) != FLASH_RC_OK)
+								flash_write(flashPos, readData + bytesWritten, IFLASH_PAGE_SIZE, 1);
 #endif
-		{
-			retry++;
 			cpu_irq_enable();
-			break;
-		}
-		cpu_irq_enable();
-
-		// Verify the written data
-		if (memcmp(readData + bytesWritten, reinterpret_cast<void *>(flashPos), IFLASH_PAGE_SIZE) == 0)
-		{
-			bytesWritten += IFLASH_PAGE_SIZE;
-			flashPos += IFLASH_PAGE_SIZE;
-			ShowProgress();
-			if (bytesWritten == blockReadSize && bytesRead != blockReadSize)
+			if (rc != FLASH_RC_OK)
 			{
-				memset(readData, 0, IFLASH_PAGE_SIZE);
-				state = FillingZeros;
+				retry++;
+				break;
 			}
-			retry = 0;
-		}
-		else
-		{
-			retry++;
+
+			// Verify the written data
+			if (memcmp(readData + bytesWritten, reinterpret_cast<void *>(flashPos), IFLASH_PAGE_SIZE) == 0)
+			{
+				bytesWritten += IFLASH_PAGE_SIZE;
+				flashPos += IFLASH_PAGE_SIZE;
+				ShowProgress();
+				if (bytesWritten == blockReadSize && bytesRead != blockReadSize)
+				{
+					memset(readData, 0, IFLASH_PAGE_SIZE);
+					state = FillingZeros;
+				}
+				retry = 0;
+			}
+			else
+			{
+				retry++;
+			}
 		}
 		break;
 
 	case FillingZeros:
 		// We've finished the upgrade process, so fill up the remaining space with 0xFF
-		debugPrintf("Filling 0x%08x - 0x%08x with oxFF\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
+		{
+			debugPrintf("Filling 0x%08x - 0x%08x with 0xFF\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
 
-		cpu_irq_disable();
+			cpu_irq_disable();
+			const uint32_t rc =
 #if SAM4E || SAM4S || SAME70
-		if (flash_write(flashPos, readData, IFLASH_PAGE_SIZE, 0) != FLASH_RC_OK)
+								flash_write(flashPos, readData, IFLASH_PAGE_SIZE, 0);
 #else
-		if (flash_write(flashPos, readData, IFLASH_PAGE_SIZE, 1) != FLASH_RC_OK)
+								flash_write(flashPos, readData, IFLASH_PAGE_SIZE, 1);
 #endif
-		{
-			retry++;
 			cpu_irq_enable();
-			break;
-		}
-		cpu_irq_enable();
-
-		// Verify the written data
-		if (memcmp(readData, reinterpret_cast<const void *>(flashPos), IFLASH_PAGE_SIZE) == 0)
-		{
-			flashPos += IFLASH_PAGE_SIZE;
-			ShowProgress();
-			if (flashPos >= firmwareFlashEnd)
+				if (rc != FLASH_RC_OK)
 			{
-				flashPos = IFLASH_ADDR;
-				state = LockingFlash;
+				retry++;
+				break;
 			}
-			retry = 0;
-		}
-		else
-		{
-			retry++;
+
+			// Verify the written data
+			if (memcmp(readData, reinterpret_cast<const void *>(flashPos), IFLASH_PAGE_SIZE) == 0)
+			{
+				flashPos += IFLASH_PAGE_SIZE;
+				ShowProgress();
+				if (flashPos >= firmwareFlashEnd)
+				{
+					flashPos = IFLASH_ADDR;
+					state = LockingFlash;
+				}
+				retry = 0;
+			}
+			else
+			{
+				retry++;
+			}
 		}
 		break;
 
 	case LockingFlash:
 		// Lock each single page again
-		debugPrintf("Locking 0x%08x - 0x%08x\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
+		{
+			debugPrintf("Locking 0x%08x - 0x%08x\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
 
-		cpu_irq_disable();
-		const bool b = (flash_lock(flashPos, flashPos + IFLASH_PAGE_SIZE - 1, nullptr, nullptr) == FLASH_RC_OK);
-		cpu_irq_enable();
-		if (b)
-		{
-			flashPos += IFLASH_PAGE_SIZE;
-			if (flashPos >= firmwareFlashEnd)
+			cpu_irq_disable();
+			const uint32_t rc = flash_lock(flashPos, flashPos + IFLASH_PAGE_SIZE - 1, nullptr, nullptr);
+			cpu_irq_enable();
+			if (rc == FLASH_RC_OK)
 			{
-				MessageF("Update successful! Rebooting...");
-				debugPrintf("Upgrade successful! Rebooting...\n");
-				Reset(true);
+				flashPos += IFLASH_PAGE_SIZE;
+				if (flashPos >= firmwareFlashEnd)
+				{
+					MessageF("Update successful! Rebooting...");
+					debugPrintf("Upgrade successful! Rebooting...\n");
+					Reset(true);
+				}
+				retry = 0;
 			}
-			retry = 0;
-		}
-		else
-		{
-			retry++;
+			else
+			{
+				retry++;
+			}
 		}
 		break;
 	}
