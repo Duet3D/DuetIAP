@@ -46,7 +46,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf/sam/utils/preprocessor}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf/thirdparty/CMSIS/Include}&quot;"/>
 								</option>
-								<option id="gnu.c.compiler.option.dialect.flags.2068938851" superClass="gnu.c.compiler.option.dialect.flags" value="-std=gnu99" valueType="string"/>
+								<option id="gnu.c.compiler.option.dialect.flags.2068938851" name="Other dialect flags" superClass="gnu.c.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=gnu99" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1718603419" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.235861589" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler">
@@ -73,7 +73,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/Libraries/Flash}&quot;"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.other.other.1566763190" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -mcpu=cortex-m3 -mthumb -ffunction-sections -fdata-sections -fno-threadsafe-statics -fno-rtti -fno-exceptions -nostdlib -Wdouble-promotion -fsingle-precision-constant" valueType="string"/>
-								<option id="gnu.cpp.compiler.option.dialect.flags.1787748642" superClass="gnu.cpp.compiler.option.dialect.flags" value="-std=gnu++17" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.dialect.flags.1787748642" name="Other dialect flags" superClass="gnu.cpp.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=gnu++17" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.783875847" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.77394759" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker"/>
@@ -147,7 +147,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf/thirdparty/CMSIS/Include}&quot;"/>
 								</option>
 								<option id="gnu.c.compiler.option.dialect.std.1554150310" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.c.compiler.dialect.default" valueType="enumerated"/>
-								<option id="gnu.c.compiler.option.dialect.flags.1628334289" superClass="gnu.c.compiler.option.dialect.flags" value="-std=gnu99" valueType="string"/>
+								<option id="gnu.c.compiler.option.dialect.flags.1628334289" name="Other dialect flags" superClass="gnu.c.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=gnu99" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.345138902" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.1271039773" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler">
@@ -175,7 +175,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/Libraries/Flash}&quot;"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.other.other.1210772320" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard -ffunction-sections -fdata-sections -fno-threadsafe-statics -fno-rtti -fno-exceptions -nostdlib -Wdouble-promotion -fsingle-precision-constant" valueType="string"/>
-								<option id="gnu.cpp.compiler.option.dialect.flags.68219380" superClass="gnu.cpp.compiler.option.dialect.flags" value="-std=gnu++17" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.dialect.flags.68219380" name="Other dialect flags" superClass="gnu.cpp.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=gnu++17" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1899938617" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.643492432" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker"/>
@@ -248,7 +248,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf/sam/utils/preprocessor}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf/thirdparty/CMSIS/Include}&quot;"/>
 								</option>
-								<option id="gnu.c.compiler.option.dialect.flags.2127828833" superClass="gnu.c.compiler.option.dialect.flags" value="-std=gnu99" valueType="string"/>
+								<option id="gnu.c.compiler.option.dialect.flags.2127828833" name="Other dialect flags" superClass="gnu.c.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=gnu99" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1269278850" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.767321300" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler">
@@ -276,7 +276,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/Libraries/Flash}&quot;"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.other.other.286512443" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -mcpu=cortex-m3 -mthumb -ffunction-sections -fdata-sections -fno-threadsafe-statics -fno-rtti -fno-exceptions -nostdlib -Wdouble-promotion -fsingle-precision-constant" valueType="string"/>
-								<option id="gnu.cpp.compiler.option.dialect.flags.674876466" superClass="gnu.cpp.compiler.option.dialect.flags" value="-std=gnu++17" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.dialect.flags.674876466" name="Other dialect flags" superClass="gnu.cpp.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=gnu++17" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1721567411" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.1106035179" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker"/>
@@ -304,7 +304,7 @@
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 		</cconfiguration>
 		<cconfiguration id="cdt.managedbuild.config.gnu.cross.exe.release.2079332028.1881893997.426720789">
-			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.config.gnu.cross.exe.release.2079332028.1881893997.426720789" moduleId="org.eclipse.cdt.core.settings" name="SAM4S_release">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.config.gnu.cross.exe.release.2079332028.1881893997.426720789" moduleId="org.eclipse.cdt.core.settings" name="SAM4S_Release">
 				<macros>
 					<stringMacro name="LINK_FLAGS_1" type="VALUE_TEXT" value="-mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--entry=Reset_Handler -Wl,--unresolved-symbols=report-all -Wl,--warn-common -Wl,--warn-section-align -Wl,--warn-unresolved-symbols -Wl,--start-group"/>
 					<stringMacro name="GccPath" type="VALUE_TEXT" value="C:\Program Files (x86)\GNU Tools ARM Embedded\7 2018-q2-update\bin"/>
@@ -321,7 +321,7 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactExtension="elf" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.release" cleanCommand="rm -rf" description="" id="cdt.managedbuild.config.gnu.cross.exe.release.2079332028.1881893997.426720789" name="SAM4S_release" optionalBuildProperties="" parent="cdt.managedbuild.config.gnu.cross.exe.release" postannouncebuildStep="Generating binary file" postbuildStep="arm-none-eabi-objcopy -O binary ${workspace_loc:/${ProjName}/${ConfigName}}/${ProjName}.elf ${workspace_loc:/${ProjName}/${ConfigName}}/iap4s.bin">
+				<configuration artifactExtension="elf" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.release" cleanCommand="rm -rf" description="" id="cdt.managedbuild.config.gnu.cross.exe.release.2079332028.1881893997.426720789" name="SAM4S_Release" optionalBuildProperties="org.eclipse.cdt.docker.launcher.containerbuild.property.volumes=,org.eclipse.cdt.docker.launcher.containerbuild.property.selectedvolumes=" parent="cdt.managedbuild.config.gnu.cross.exe.release" postannouncebuildStep="Generating binary file" postbuildStep="arm-none-eabi-objcopy -O binary ${workspace_loc:/${ProjName}/${ConfigName}}/${ProjName}.elf ${workspace_loc:/${ProjName}/${ConfigName}}/iap4s.bin">
 					<folderInfo id="cdt.managedbuild.config.gnu.cross.exe.release.2079332028.1881893997.426720789." name="/" resourcePath="">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.cross.exe.release.1732952343" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.exe.release">
 							<option id="cdt.managedbuild.option.gnu.cross.prefix.1094234823" name="Prefix" superClass="cdt.managedbuild.option.gnu.cross.prefix" value="arm-none-eabi-" valueType="string"/>
@@ -348,7 +348,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf/sam/utils/preprocessor}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf/thirdparty/CMSIS/Include}&quot;"/>
 								</option>
-								<option id="gnu.c.compiler.option.dialect.flags.940353762" superClass="gnu.c.compiler.option.dialect.flags" value="-std=gnu99" valueType="string"/>
+								<option id="gnu.c.compiler.option.dialect.flags.940353762" name="Other dialect flags" superClass="gnu.c.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=gnu99" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.153331824" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.1345492432" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler">
@@ -375,7 +375,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/Libraries/Flash}&quot;"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.other.other.356184651" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -mcpu=cortex-m4 -mthumb -ffunction-sections -fdata-sections -fno-threadsafe-statics -fno-rtti -fno-exceptions -nostdlib -Wdouble-promotion -fsingle-precision-constant" valueType="string"/>
-								<option id="gnu.cpp.compiler.option.dialect.flags.635584478" superClass="gnu.cpp.compiler.option.dialect.flags" value="-std=gnu++17" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.dialect.flags.635584478" name="Other dialect flags" superClass="gnu.cpp.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=gnu++17" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1180338365" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.132894769" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker"/>
@@ -448,8 +448,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf/sam/utils/preprocessor}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf/thirdparty/CMSIS/Include}&quot;"/>
 								</option>
-								<option id="gnu.c.compiler.option.dialect.flags.1851506750" superClass="gnu.c.compiler.option.dialect.flags" value="-std=gnu99" valueType="string"/>
-								<option id="gnu.c.compiler.option.dialect.std.800565259" superClass="gnu.c.compiler.option.dialect.std" value="gnu.c.compiler.dialect.default" valueType="enumerated"/>
+								<option id="gnu.c.compiler.option.dialect.flags.1851506750" name="Other dialect flags" superClass="gnu.c.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=gnu99" valueType="string"/>
+								<option id="gnu.c.compiler.option.dialect.std.800565259" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.c.compiler.dialect.default" valueType="enumerated"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.575727823" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.5046419" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler">
@@ -477,8 +477,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/Libraries/Flash}&quot;"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.other.other.2138496886" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -mcpu=cortex-m3 -mthumb -ffunction-sections -fdata-sections -fno-threadsafe-statics -fno-rtti -fno-exceptions -nostdlib -Wdouble-promotion -fsingle-precision-constant" valueType="string"/>
-								<option id="gnu.cpp.compiler.option.dialect.flags.868897457" superClass="gnu.cpp.compiler.option.dialect.flags" value="-std=gnu++17" valueType="string"/>
-								<option id="gnu.cpp.compiler.option.dialect.std.2140201714" superClass="gnu.cpp.compiler.option.dialect.std" value="gnu.cpp.compiler.dialect.default" valueType="enumerated"/>
+								<option id="gnu.cpp.compiler.option.dialect.flags.868897457" name="Other dialect flags" superClass="gnu.cpp.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=gnu++17" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.dialect.std.2140201714" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.cpp.compiler.dialect.default" valueType="enumerated"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1228592170" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.206915178" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker"/>
@@ -551,7 +551,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf/thirdparty/CMSIS/Include}&quot;"/>
 								</option>
 								<option id="gnu.c.compiler.option.dialect.std.1659893527" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.c.compiler.dialect.default" valueType="enumerated"/>
-								<option id="gnu.c.compiler.option.dialect.flags.1226579578" superClass="gnu.c.compiler.option.dialect.flags" value="-std=gnu99" valueType="string"/>
+								<option id="gnu.c.compiler.option.dialect.flags.1226579578" name="Other dialect flags" superClass="gnu.c.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=gnu99" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1266195470" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.1178382877" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler">
@@ -578,7 +578,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/Libraries/Flash}&quot;"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.other.other.1325863638" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -mcpu=cortex-m7 -mthumb -mfpu=fpv5-d16 -mfloat-abi=hard -ffunction-sections -fdata-sections -fno-threadsafe-statics -fno-rtti -fno-exceptions -nostdlib -Wdouble-promotion -fsingle-precision-constant" valueType="string"/>
-								<option id="gnu.cpp.compiler.option.dialect.flags.836751933" superClass="gnu.cpp.compiler.option.dialect.flags" value="-std=gnu++17" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.dialect.flags.836751933" name="Other dialect flags" superClass="gnu.cpp.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=gnu++17" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1301705887" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.1556466240" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker"/>
@@ -623,7 +623,7 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactExtension="elf" artifactName="iapsame70xpld" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.release" cleanCommand="rm -rf" description="" id="cdt.managedbuild.config.gnu.cross.exe.release.2079332028.1881893997.1367930189.1748424989" name="SAME70XPLD" optionalBuildProperties="org.eclipse.cdt.docker.launcher.containerbuild.property.volumes=,org.eclipse.cdt.docker.launcher.containerbuild.property.selectedvolumes=" parent="cdt.managedbuild.config.gnu.cross.exe.release" postannouncebuildStep="Generating binary file" postbuildStep="arm-none-eabi-objcopy -O binary ${workspace_loc:/${ProjName}/${ConfigName}}/${BuildArtifactFileBaseName}.elf ${workspace_loc:/${ProjName}/${ConfigName}}/${BuildArtifactFileBaseName}.bin">
+				<configuration artifactExtension="elf" artifactName="iapsame70xpld" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.release" cleanCommand="rm -rf" description="" id="cdt.managedbuild.config.gnu.cross.exe.release.2079332028.1881893997.1367930189.1748424989" name="SAME70XPLD" optionalBuildProperties="org.eclipse.cdt.docker.launcher.containerbuild.property.selectedvolumes=,org.eclipse.cdt.docker.launcher.containerbuild.property.volumes=" parent="cdt.managedbuild.config.gnu.cross.exe.release" postannouncebuildStep="Generating binary file" postbuildStep="arm-none-eabi-objcopy -O binary ${workspace_loc:/${ProjName}/${ConfigName}}/${BuildArtifactFileBaseName}.elf ${workspace_loc:/${ProjName}/${ConfigName}}/${BuildArtifactFileBaseName}.bin">
 					<folderInfo id="cdt.managedbuild.config.gnu.cross.exe.release.2079332028.1881893997.1367930189.1748424989." name="/" resourcePath="">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.cross.exe.release.1990301863" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.exe.release">
 							<option id="cdt.managedbuild.option.gnu.cross.prefix.1118644630" name="Prefix" superClass="cdt.managedbuild.option.gnu.cross.prefix" useByScannerDiscovery="false" value="arm-none-eabi-" valueType="string"/>
@@ -652,7 +652,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf/thirdparty/CMSIS/Include}&quot;"/>
 								</option>
 								<option id="gnu.c.compiler.option.dialect.std.233747590" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.c.compiler.dialect.default" valueType="enumerated"/>
-								<option id="gnu.c.compiler.option.dialect.flags.1421713859" superClass="gnu.c.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=gnu99" valueType="string"/>
+								<option id="gnu.c.compiler.option.dialect.flags.1421713859" name="Other dialect flags" superClass="gnu.c.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=gnu99" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1858396158" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.529475703" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler">
@@ -680,8 +680,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/Libraries/Flash}&quot;"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.other.other.1345019059" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -mcpu=cortex-m7 -mthumb -mfpu=fpv5-d16 -mfloat-abi=hard -ffunction-sections -fdata-sections -fno-threadsafe-statics -fno-rtti -fno-exceptions -nostdlib -Wdouble-promotion -fsingle-precision-constant" valueType="string"/>
-								<option id="gnu.cpp.compiler.option.dialect.std.1047003311" superClass="gnu.cpp.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.cpp.compiler.dialect.default" valueType="enumerated"/>
-								<option id="gnu.cpp.compiler.option.dialect.flags.1003339474" superClass="gnu.cpp.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=gnu++17" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.dialect.std.1047003311" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.cpp.compiler.dialect.default" valueType="enumerated"/>
+								<option id="gnu.cpp.compiler.option.dialect.flags.1003339474" name="Other dialect flags" superClass="gnu.cpp.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=gnu++17" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1593375062" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.1448274514" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker"/>
