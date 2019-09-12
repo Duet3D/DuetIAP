@@ -44,6 +44,7 @@ uint32_t flashPos = IFLASH_ADDR;
 
 size_t retry = 0;
 size_t bytesRead, bytesWritten;
+bool haveDataInBuffer;
 const size_t reportPercentIncrement = 20;
 size_t reportNextPercent = reportPercentIncrement;
 
@@ -308,60 +309,64 @@ void writeBinary()
 #if SAM4E || SAM4S || SAME70
 	case ErasingFlash:
 		debugPrintf("Erasing 0x%08x\n", flashPos);
-		if (flash_erase_sector(flashPos) == FLASH_RC_OK)
+		if (retry != 0)
 		{
-			retry = 0;
+			MessageF("Erase retry #%u", retry);
+		}
 
+		{
+			const uint32_t sectorSize =
 # if SAM4E || SAM4S
-			// Deal with varying size sectors on the SAM4E
-			// There are two 8K sectors, then one 48K sector, then seven 64K sectors
-			if (flashPos - IFLASH_ADDR < 16 * 1024)
-			{
-				flashPos += 8 * 1024;
-			}
-			else if (flashPos - IFLASH_ADDR == 16 * 1024)
-			{
-				flashPos += 48 * 1024;
-			}
-			else
-			{
-				flashPos += 64 * 1024;
-			}
+				// Deal with varying size sectors on the SAM4E
+				// There are two 8K sectors, then one 48K sector, then seven 64K sectors
+				(flashPos - IFLASH_ADDR < 16 * 1024) ? 8 * 1024
+					: (flashPos - IFLASH_ADDR == 16 * 1024) ? 48 * 1024
+						: 64 * 1024;
 #elif SAME70
-			// Deal with varying size sectors on the SAME70
-			// There are two 8K sectors, then one 112K sector, then the rest are 128K sectors
-			if (flashPos - IFLASH_ADDR < 16 * 1024)
+				// Deal with varying size sectors on the SAME70
+				// There are two 8K sectors, then one 112K sector, then the rest are 128K sectors
+				(flashPos - IFLASH_ADDR < 16 * 1024) ? 8 * 1024
+					: (flashPos - IFLASH_ADDR == 16 * 1024) ? 112 * 1024
+						: 128 * 1024;
+#endif
+
+			if (flash_erase_sector(flashPos) == FLASH_RC_OK)
 			{
-				flashPos += 8 * 1024;
-			}
-			else if (flashPos - IFLASH_ADDR == 16 * 1024)
-			{
-				flashPos += 112 * 1024;
+				// Check that the sector really is erased
+				for (uint32_t p = flashPos; p < flashPos + sectorSize; p += sizeof(uint32_t))
+				{
+					if (*reinterpret_cast<const uint32_t*>(p) != 0xFFFFFFFF)
+					{
+						++retry;
+						break;
+					}
+				}
+				retry = 0;
+				flashPos += sectorSize;
 			}
 			else
 			{
-				flashPos += 128 * 1024;
+				++retry;
 			}
-#endif
-		}
-		else
-		{
-			++retry;
-		}
-		if (flashPos >= firmwareFlashEnd)
-		{
-			flashPos = IFLASH_ADDR;
-			bytesWritten = blockReadSize;
-			state = WritingUpgrade;
+			if (flashPos >= firmwareFlashEnd)
+			{
+				flashPos = IFLASH_ADDR;
+				haveDataInBuffer = false;
+				state = WritingUpgrade;
+			}
 		}
 		break;
 #endif
 
 	case WritingUpgrade:
 		// Attempt to read a chunk from the new firmware file
-		if (bytesWritten == blockReadSize)
+		if (!haveDataInBuffer)
 		{
 			debugPrintf("Reading %u bytes from the file\n", blockReadSize);
+			if (retry != 0)
+			{
+				MessageF("Read file retry #%u", retry);
+			}
 
 			// Seek to the correct place in case we are doing retries
 			FRESULT result = f_lseek(&upgradeBinary, flashPos - IFLASH_ADDR);
@@ -381,23 +386,30 @@ void writeBinary()
 				retry++;
 				break;
 			}
-			retry = 0;
-			bytesWritten = 0;
 
 			// Have we finished the file?
-			if (bytesRead != blockReadSize)
+			if (bytesRead < blockReadSize)
 			{
-				// Yes - close and delete it
-				closeAndDeleteBinary();
+				// Yes - close it
+				closeBinary();
 
-				// Now we just need to fill up the remaining pages with 0xFF
+				// Now we just need to fill up the remaining part of the buffer with 0xFF
 				memset(readData + bytesRead, 0xFF, blockReadSize - bytesRead);
 			}
+
+			haveDataInBuffer = true;
+			retry = 0;
+			bytesWritten = 0;
 		}
 
 		// Write another page
 		{
 			debugPrintf("Writing 0x%08x - 0x%08x\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
+			if (retry != 0)
+			{
+				MessageF("Flash write retry #%u", retry);
+			}
+
 			cpu_irq_disable();
 			const uint32_t rc =
 #if SAM4E || SAM4S || SAME70
@@ -415,53 +427,18 @@ void writeBinary()
 			// Verify the written data
 			if (memcmp(readData + bytesWritten, reinterpret_cast<void *>(flashPos), IFLASH_PAGE_SIZE) == 0)
 			{
+				retry = 0;
 				bytesWritten += IFLASH_PAGE_SIZE;
 				flashPos += IFLASH_PAGE_SIZE;
 				ShowProgress();
-				if (bytesWritten == blockReadSize && bytesRead != blockReadSize)
+				if (bytesWritten == blockReadSize)
 				{
-					memset(readData, 0, IFLASH_PAGE_SIZE);
-					state = FillingZeros;
+					haveDataInBuffer = false;
+					if (bytesRead < blockReadSize)
+					{
+						state = LockingFlash;
+					}
 				}
-				retry = 0;
-			}
-			else
-			{
-				retry++;
-			}
-		}
-		break;
-
-	case FillingZeros:
-		// We've finished the upgrade process, so fill up the remaining space with 0xFF
-		{
-			debugPrintf("Filling 0x%08x - 0x%08x with 0xFF\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
-
-			cpu_irq_disable();
-			const uint32_t rc =
-#if SAM4E || SAM4S || SAME70
-								flash_write(flashPos, readData, IFLASH_PAGE_SIZE, 0);
-#else
-								flash_write(flashPos, readData, IFLASH_PAGE_SIZE, 1);
-#endif
-			cpu_irq_enable();
-				if (rc != FLASH_RC_OK)
-			{
-				retry++;
-				break;
-			}
-
-			// Verify the written data
-			if (memcmp(readData, reinterpret_cast<const void *>(flashPos), IFLASH_PAGE_SIZE) == 0)
-			{
-				flashPos += IFLASH_PAGE_SIZE;
-				ShowProgress();
-				if (flashPos >= firmwareFlashEnd)
-				{
-					flashPos = IFLASH_ADDR;
-					state = LockingFlash;
-				}
-				retry = 0;
 			}
 			else
 			{
@@ -499,19 +476,9 @@ void writeBinary()
 }
 
 // Does what it says
-void closeAndDeleteBinary()
+void closeBinary()
 {
-	// Close the FSO
 	f_close(&upgradeBinary);
-
-#if 1
-	// DC42: we no longer delete the binary. This allows the same SD card to be used repeatedly to upload firmware
-	// to multiple Duets without needing to copy the file back on to the SD card after each one.
-	// It would also allow us to reduce memory usage by compiling FatFS in read-only mode.
-#else
-	// Unlink (delete) the file
-	f_unlink(fwFile);
-#endif
 }
 
 void Reset(bool success)

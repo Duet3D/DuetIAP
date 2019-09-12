@@ -121,7 +121,6 @@ enum ProcessState
 	ErasingFlash,
 #endif
 	WritingUpgrade,
-	FillingZeros,
 	LockingFlash
 };
 
@@ -130,7 +129,7 @@ void initFilesystem();
 void getFirmwareFileName();
 void openBinary();
 void writeBinary();
-void closeAndDeleteBinary();
+void closeBinary();
 void Reset(bool success);
 
 void sendUSB(uint32_t ep, const void* d, uint32_t len);
