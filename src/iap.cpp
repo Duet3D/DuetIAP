@@ -16,6 +16,7 @@
 #include "ff.h"
 #include "sd_mmc.h"
 #include "rstc/rstc.h"
+#include <General/SafeVsnprintf.h>
 
 #include <cstdarg>
 
@@ -517,7 +518,7 @@ void debugPrintf(const char *fmt, ...)
 {
 	va_list vargs;
 	va_start(vargs, fmt);
-	vsnprintf(formatBuffer, ARRAY_SIZE(formatBuffer), fmt, vargs);
+	SafeVsnprintf(formatBuffer, ARRAY_SIZE(formatBuffer), fmt, vargs);
 	va_end(vargs);
 
 #if DEBUG
@@ -531,7 +532,7 @@ void MessageF(const char *fmt, ...)
 {
 	va_list vargs;
 	va_start(vargs, fmt);
-	vsnprintf(formatBuffer, ARRAY_SIZE(formatBuffer), fmt, vargs);
+	SafeVsnprintf(formatBuffer, ARRAY_SIZE(formatBuffer), fmt, vargs);
 	va_end(vargs);
 
 	SERIAL_AUX_DEVICE.print("{\"message\":\"");
