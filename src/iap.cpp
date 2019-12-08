@@ -554,6 +554,11 @@ extern "C" void TWI1_Handler()
 {
 }
 
+// Cache hooks called from the ASF. These are dummy because we run with the cache disabled.
+extern "C" void CacheFlushBeforeDMAReceive(const volatile void *start, size_t length) { }
+extern "C" void CacheInvalidateAfterDMAReceive(const volatile void *start, size_t length) { }
+extern "C" void CacheFlushBeforeDMASend(const volatile void *start, size_t length) { }
+
 #if DEBUG
 // We have to use our own USB transmit function here, because the core will assume that the USB line is closed
 void sendUSB(uint32_t ep, const void* d, uint32_t len)
