@@ -225,7 +225,11 @@ void openBinary()
 		Reset(false);
 	}
 
+#ifdef IAP_IN_RAM
+	const size_t maxFirmwareSize = IFLASH_SIZE;
+#else
 	const size_t maxFirmwareSize = IFLASH_SIZE - iapFirmwareSize;
+#endif
 	if (info.fsize > maxFirmwareSize)
 	{
 		MessageF("ERROR: File %s is too big", fwFile);

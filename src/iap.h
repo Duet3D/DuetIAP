@@ -96,13 +96,21 @@ const char * const fwFilePrefix = "0:/sys/Duet3";
 const Pin SdWriteProtectPins[NumSdCards] = { NoPin, NoPin };
 const Pin SdSpiCSPins[1] = { NoPin };
 
+# ifdef IAP_IN_RAM
+const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE;
+# else
 const uint32_t iapFirmwareSize = 0x20000;								// 128 KiB max (SAME70 has 128kb flash sectors so we can't erase a smaller amount)
 const uint32_t firmwareFlashEnd = IFLASH_ADDR + 0x000E0000;				// iape70 is designed to work with >= 1Mbyte flash
+#endif
 
 #else	// not a SAME70 variant
 
+# ifdef IAP_IN_RAM
+const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE;
+# else
 const uint32_t iapFirmwareSize = 0x10000;								// 64 KiB max
 const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE - iapFirmwareSize;
+# endif
 
 #endif
 
