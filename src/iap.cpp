@@ -1,4 +1,4 @@
-/* In-Application Programming application for the RepRap Duet platform (Atmel SAM3X8E)
+/* In-Application Programming application for Duet3D platforms
  *
  * This application is first written by RepRapFirmware to the end of the second
  * Flash bank and then started by RepRapFirmware.
@@ -7,16 +7,19 @@
  * reading the new firmware binary from the SD card and replaces the corresponding
  * Flash content sector by sector.
  *
- * This application was written by Christian Hammacher (2016) and is
+ * This application was written by Christian Hammacher (2016-2019) and is
  * licensed under the terms of the GPL v2.
  */
 
 #include "iap.h"
 #include "DueFlashStorage.h"
-#include "ff.h"
-#include "sd_mmc.h"
 #include "rstc/rstc.h"
 #include <General/SafeVsnprintf.h>
+
+#ifndef IAP_VIA_SPI
+# include "ff.h"
+# include "sd_mmc.h"
+#endif
 
 #include <cstdarg>
 
@@ -32,13 +35,22 @@ bool ledIsOn;
 
 #endif
 
+#ifdef IAP_VIA_SPI
+
+uint32_t writeData32[(blockReadSize + 3) / 4];
+char * const writeData = reinterpret_cast<char *>(writeData32);
+uint32_t transferStartTime;
+
+#else
+
 FATFS fs;
 FIL upgradeBinary;
+const char* fwFile = defaultFwFile;
+
+#endif
 
 uint32_t readData32[(blockReadSize + 3) / 4];	// use aligned memory so DMA works well
 char * const readData = reinterpret_cast<char *>(readData32);
-
-const char* fwFile = defaultFwFile;
 
 ProcessState state = Initializing;
 uint32_t flashPos = IFLASH_ADDR;
@@ -96,6 +108,21 @@ extern "C" void AppMain()
 {
 	SysTickInit();
 
+#ifdef IAP_VIA_SPI
+	pinMode(LinuxTfrReadyPin, OUTPUT_LOW);
+
+	ConfigurePin(APIN_SBC_SPI_MOSI);
+	ConfigurePin(APIN_SBC_SPI_MISO);
+	ConfigurePin(APIN_SBC_SPI_SCK);
+	ConfigurePin(APIN_SBC_SPI_SS0);
+
+	pmc_enable_periph_clk(ID_XDMAC);
+	NVIC_DisableIRQ(XDMAC_IRQn);
+
+	spi_enable_clock(SBC_SPI);
+	spi_disable(SBC_SPI);
+#endif
+
 #if SAM4E || SAM4S || SAME70
 	digitalWrite(DiagLedPin, true);				// turn the LED on
 	ledIsOn = true;
@@ -106,12 +133,17 @@ extern "C" void AppMain()
 	MessageF("IAP started");
 
 	debugPrintf("IAP Utility for Duet electronics\n");
-	debugPrintf("Developed by Christian Hammacher (2016)\n");
+	debugPrintf("Developed by Christian Hammacher (2016-2019)\n");
 	debugPrintf("Licensed under the terms of the GPLv2\n\n");
 
+#ifdef IAP_VIA_SPI
+	memset(writeData, 0x1A, blockReadSize);
+#else
 	initFilesystem();
 	getFirmwareFileName();
 	openBinary();
+#endif
+
 	for (;;)
 	{
 		checkLed();
@@ -120,6 +152,177 @@ extern "C" void AppMain()
 }
 
 /** IAP routines **/
+
+#ifdef IAP_VIA_SPI
+
+# include "xdmac/xdmac.h"
+
+static xdmac_channel_config_t xdmac_tx_cfg, xdmac_rx_cfg;
+
+volatile bool dataReceived = false, transferPending = false, transferReadyHigh = false;
+
+void setup_spi(size_t bytesToTransfer)
+{
+	// Reset SPI
+	spi_reset(SBC_SPI);
+	spi_set_slave_mode(SBC_SPI);
+	spi_disable_mode_fault_detect(SBC_SPI);
+	spi_set_peripheral_chip_select_value(SBC_SPI, spi_get_pcs(0));
+	spi_set_clock_polarity(SBC_SPI, 0, 0);
+	spi_set_clock_phase(SBC_SPI, 0, 1);
+	spi_set_bits_per_transfer(SBC_SPI, 0, SPI_CSR_BITS_8_BIT);
+
+	// Initialize channel config for transmitter
+	xdmac_tx_cfg.mbr_ubc = bytesToTransfer;
+	xdmac_tx_cfg.mbr_sa = (uint32_t)writeData;
+	xdmac_tx_cfg.mbr_da = (uint32_t)&(SBC_SPI->SPI_TDR);
+	xdmac_tx_cfg.mbr_cfg = XDMAC_CC_TYPE_PER_TRAN |
+		XDMAC_CC_MBSIZE_SINGLE |
+		XDMAC_CC_DSYNC_MEM2PER |
+		XDMAC_CC_CSIZE_CHK_1 |
+		XDMAC_CC_DWIDTH_BYTE |
+		XDMAC_CC_SIF_AHB_IF0 |
+		XDMAC_CC_DIF_AHB_IF1 |
+		XDMAC_CC_SAM_INCREMENTED_AM |
+		XDMAC_CC_DAM_FIXED_AM |
+		XDMAC_CC_PERID(LINUX_XDMAC_TX_CH_NUM);
+	xdmac_tx_cfg.mbr_bc = 0;
+	xdmac_tx_cfg.mbr_ds = 0;
+	xdmac_tx_cfg.mbr_sus = 0;
+	xdmac_tx_cfg.mbr_dus = 0;
+	xdmac_configure_transfer(XDMAC, DmacChanLinuxTx, &xdmac_tx_cfg);
+
+	xdmac_channel_set_descriptor_control(XDMAC, DmacChanLinuxTx, 0);
+	xdmac_channel_enable(XDMAC, DmacChanLinuxTx);
+	xdmac_disable_interrupt(XDMAC, DmacChanLinuxTx);
+
+	// Initialize channel config for receiver
+	xdmac_rx_cfg.mbr_ubc = bytesToTransfer;
+	xdmac_rx_cfg.mbr_da = (uint32_t)readData;
+	xdmac_rx_cfg.mbr_sa = (uint32_t)&(SBC_SPI->SPI_RDR);
+	xdmac_rx_cfg.mbr_cfg = XDMAC_CC_TYPE_PER_TRAN |
+		XDMAC_CC_MBSIZE_SINGLE |
+		XDMAC_CC_DSYNC_PER2MEM |
+		XDMAC_CC_CSIZE_CHK_1 |
+		XDMAC_CC_DWIDTH_BYTE|
+		XDMAC_CC_SIF_AHB_IF1 |
+		XDMAC_CC_DIF_AHB_IF0 |
+		XDMAC_CC_SAM_FIXED_AM |
+		XDMAC_CC_DAM_INCREMENTED_AM |
+		XDMAC_CC_PERID(LINUX_XDMAC_RX_CH_NUM);
+	xdmac_rx_cfg.mbr_bc = 0;
+	xdmac_tx_cfg.mbr_ds = 0;
+	xdmac_rx_cfg.mbr_sus = 0;
+	xdmac_rx_cfg.mbr_dus = 0;
+	xdmac_configure_transfer(XDMAC, DmacChanLinuxRx, &xdmac_rx_cfg);
+
+	xdmac_channel_set_descriptor_control(XDMAC, DmacChanLinuxRx, 0);
+	xdmac_channel_enable(XDMAC, DmacChanLinuxRx);
+	xdmac_disable_interrupt(XDMAC, DmacChanLinuxRx);
+
+	// Enable SPI and notify the RaspPi we are ready
+	spi_enable(SBC_SPI);
+
+	// Enable end-of-transfer interrupt
+	(void)SBC_SPI->SPI_SR;						// clear any pending interrupt
+	SBC_SPI->SPI_IER = SPI_IER_NSSR;				// enable the NSS rising interrupt
+	NVIC_SetPriority(SBC_SPI_IRQn, NvicPrioritySpi);
+	NVIC_EnableIRQ(SBC_SPI_IRQn);
+
+	// Begin transfer
+	dataReceived = false;
+	transferPending = true;
+	transferStartTime = millis();
+
+	transferReadyHigh = !transferReadyHigh;
+	digitalWrite(LinuxTfrReadyPin, transferReadyHigh);
+}
+
+void disable_spi()
+{
+	// Disable the XDMAC channels
+	xdmac_channel_disable(XDMAC, DmacChanLinuxRx);
+	xdmac_channel_disable(XDMAC, DmacChanLinuxTx);
+
+	// Disable SPI
+	spi_disable(SBC_SPI);
+}
+
+# ifndef SBC_SPI_HANDLER
+#  error SBC_SPI_HANDLER undefined
+# endif
+
+extern "C" void SBC_SPI_HANDLER(void)
+{
+	const uint32_t status = SBC_SPI->SPI_SR;							// read status and clear interrupt
+	SBC_SPI->SPI_IDR = SPI_IER_NSSR;									// disable the interrupt
+	if ((status & SPI_SR_NSSR) != 0)
+	{
+		// Data has been transferred, disable transfer ready pin and XDMAC channels
+		disable_spi();
+		dataReceived = true;
+	}
+}
+
+bool is_spi_transfer_complete()
+{
+	if (dataReceived && (xdmac_channel_get_status(XDMAC) & ((1 << DmacChanLinuxRx) | (1 << DmacChanLinuxTx))) == 0)
+	{
+		transferPending = false;
+		return true;
+	}
+	return false;
+}
+
+uint16_t CRC16(const char *buffer, size_t length)
+{
+	const uint16_t crc16_table[] = {
+        0x0000, 0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241,
+        0xC601, 0x06C0, 0x0780, 0xC741, 0x0500, 0xC5C1, 0xC481, 0x0440,
+        0xCC01, 0x0CC0, 0x0D80, 0xCD41, 0x0F00, 0xCFC1, 0xCE81, 0x0E40,
+        0x0A00, 0xCAC1, 0xCB81, 0x0B40, 0xC901, 0x09C0, 0x0880, 0xC841,
+        0xD801, 0x18C0, 0x1980, 0xD941, 0x1B00, 0xDBC1, 0xDA81, 0x1A40,
+        0x1E00, 0xDEC1, 0xDF81, 0x1F40, 0xDD01, 0x1DC0, 0x1C80, 0xDC41,
+        0x1400, 0xD4C1, 0xD581, 0x1540, 0xD701, 0x17C0, 0x1680, 0xD641,
+        0xD201, 0x12C0, 0x1380, 0xD341, 0x1100, 0xD1C1, 0xD081, 0x1040,
+        0xF001, 0x30C0, 0x3180, 0xF141, 0x3300, 0xF3C1, 0xF281, 0x3240,
+        0x3600, 0xF6C1, 0xF781, 0x3740, 0xF501, 0x35C0, 0x3480, 0xF441,
+        0x3C00, 0xFCC1, 0xFD81, 0x3D40, 0xFF01, 0x3FC0, 0x3E80, 0xFE41,
+        0xFA01, 0x3AC0, 0x3B80, 0xFB41, 0x3900, 0xF9C1, 0xF881, 0x3840,
+        0x2800, 0xE8C1, 0xE981, 0x2940, 0xEB01, 0x2BC0, 0x2A80, 0xEA41,
+        0xEE01, 0x2EC0, 0x2F80, 0xEF41, 0x2D00, 0xEDC1, 0xEC81, 0x2C40,
+        0xE401, 0x24C0, 0x2580, 0xE541, 0x2700, 0xE7C1, 0xE681, 0x2640,
+        0x2200, 0xE2C1, 0xE381, 0x2340, 0xE101, 0x21C0, 0x2080, 0xE041,
+        0xA001, 0x60C0, 0x6180, 0xA141, 0x6300, 0xA3C1, 0xA281, 0x6240,
+        0x6600, 0xA6C1, 0xA781, 0x6740, 0xA501, 0x65C0, 0x6480, 0xA441,
+        0x6C00, 0xACC1, 0xAD81, 0x6D40, 0xAF01, 0x6FC0, 0x6E80, 0xAE41,
+        0xAA01, 0x6AC0, 0x6B80, 0xAB41, 0x6900, 0xA9C1, 0xA881, 0x6840,
+        0x7800, 0xB8C1, 0xB981, 0x7940, 0xBB01, 0x7BC0, 0x7A80, 0xBA41,
+        0xBE01, 0x7EC0, 0x7F80, 0xBF41, 0x7D00, 0xBDC1, 0xBC81, 0x7C40,
+        0xB401, 0x74C0, 0x7580, 0xB541, 0x7700, 0xB7C1, 0xB681, 0x7640,
+        0x7200, 0xB2C1, 0xB381, 0x7340, 0xB101, 0x71C0, 0x7080, 0xB041,
+        0x5000, 0x90C1, 0x9181, 0x5140, 0x9301, 0x53C0, 0x5280, 0x9241,
+        0x9601, 0x56C0, 0x5780, 0x9741, 0x5500, 0x95C1, 0x9481, 0x5440,
+        0x9C01, 0x5CC0, 0x5D80, 0x9D41, 0x5F00, 0x9FC1, 0x9E81, 0x5E40,
+        0x5A00, 0x9AC1, 0x9B81, 0x5B40, 0x9901, 0x59C0, 0x5880, 0x9841,
+        0x8801, 0x48C0, 0x4980, 0x8941, 0x4B00, 0x8BC1, 0x8A81, 0x4A40,
+        0x4E00, 0x8EC1, 0x8F81, 0x4F40, 0x8D01, 0x4DC0, 0x4C80, 0x8C41,
+        0x4400, 0x84C1, 0x8581, 0x4540, 0x8701, 0x47C0, 0x4680, 0x8641,
+        0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040
+    };
+
+    uint16_t Crc = 65535;
+    uint16_t x;
+    for (size_t i = 0; i < length; i++)
+    {
+        x = (uint16_t)(Crc ^ buffer[i]);
+        Crc = (uint16_t)((Crc >> 8) ^ crc16_table[x & 0x00FF]);
+    }
+
+    return Crc;
+}
+
+#else
 
 void initFilesystem()
 {
@@ -249,6 +452,8 @@ void openBinary()
 	debugPrintf("Done\n");
 }
 
+#endif
+
 void ShowProgress()
 {
 	const size_t percentDone = (100 * (flashPos - IFLASH_ADDR))/(firmwareFlashEnd - IFLASH_ADDR);
@@ -264,8 +469,8 @@ void writeBinary()
 {
 	if (retry > maxRetries)
 	{
-		MessageF("ERROR: Operation failed after %d retries", maxRetries);
-		debugPrintf("ERROR: Operation failed after %d retries!\n", maxRetries);
+		MessageF("ERROR: Operation %d failed after %d retries", (int)state, maxRetries);
+		debugPrintf("ERROR: Operation %d failed after %d retries!\n", (int)state, maxRetries);
 		Reset(false);
 	}
 	else if (retry > 0)
@@ -364,9 +569,41 @@ void writeBinary()
 #endif
 
 	case WritingUpgrade:
-		// Attempt to read a chunk from the new firmware file
+		// Attempt to read a chunk from the new firmware file or SBC
 		if (!haveDataInBuffer)
 		{
+#ifdef IAP_VIA_SPI
+			if (transferPending)
+			{
+				if (is_spi_transfer_complete())
+				{
+					// Got another flash block to write. The block size is fixed
+					bytesRead = blockReadSize;
+				}
+				else if (flashPos != IFLASH_ADDR && millis() - transferStartTime > TransferCompleteDelay)
+				{
+					// If anything could be written before, check for the delay indicating the flashing process has finished
+					bytesRead = 0;
+					disable_spi();
+				}
+				else
+				{
+					if (millis() - transferStartTime > TransferTimeout)
+					{
+						// Timeout while waiting for new data
+						debugPrintf("ERROR: Timeout while waiting for response\n");
+						Reset(false);
+					}
+					break;
+				}
+			}
+			else
+			{
+				// The last block has been written to Flash. Start the next SPI transfer
+				setup_spi(blockReadSize);
+				break;
+			}
+#else
 			debugPrintf("Reading %u bytes from the file\n", blockReadSize);
 			if (retry != 0)
 			{
@@ -391,13 +628,15 @@ void writeBinary()
 				retry++;
 				break;
 			}
+#endif
 
 			// Have we finished the file?
 			if (bytesRead < blockReadSize)
 			{
+#ifndef IAP_VIA_SPI
 				// Yes - close it
 				closeBinary();
-
+#endif
 				// Now we just need to fill up the remaining part of the buffer with 0xFF
 				memset(readData + bytesRead, 0xFF, blockReadSize - bytesRead);
 			}
@@ -439,10 +678,15 @@ void writeBinary()
 				if (bytesWritten == blockReadSize)
 				{
 					haveDataInBuffer = false;
+#ifdef IAP_VIA_SPI
+					setup_spi(sizeof(FlashVerifyRequest));
+					state = VerifyingChecksum;
+#else
 					if (bytesRead < blockReadSize)
 					{
 						state = LockingFlash;
 					}
+#endif
 				}
 			}
 			else
@@ -451,6 +695,67 @@ void writeBinary()
 			}
 		}
 		break;
+
+#ifdef IAP_VIA_SPI
+	case VerifyingChecksum:
+		if (millis() - transferStartTime > TransferTimeout)
+		{
+			debugPrintf("Timeout while waiting for checksum\n");
+			Reset(false);
+		}
+		else if (is_spi_transfer_complete())
+		{
+			const FlashVerifyRequest *request = reinterpret_cast<const FlashVerifyRequest*>(readData);
+			uint16_t crc16 = CRC16(reinterpret_cast<const char*>(IFLASH_ADDR), request->firmwareLength);
+			if (request->crc16 == crc16)
+			{
+				// Success!
+				debugPrintf("Checksum OK!\n");
+				writeData[0] = 0x0C;
+				state = SendingChecksumOK;
+			}
+			else
+			{
+				// Checksum mismatch
+				debugPrintf("Checksum does not match\n");
+				writeData[0] = 0xFF;
+				state = SendingChecksumError;
+			}
+			retry = 0;
+			setup_spi(1);
+		}
+		break;
+
+	case SendingChecksumOK:
+		if (millis() - transferStartTime > TransferTimeout)
+		{
+			// Although this is not expected, the firmware has been written successfully so just continue as normal
+			debugPrintf("Timeout while exchanging checksum acknowledgment\n");
+			state = LockingFlash;
+		}
+		else if (is_spi_transfer_complete())
+		{
+			// Firmware checksum OK, lock the flash again and restart
+			state = LockingFlash;
+		}
+		break;
+
+	case SendingChecksumError:
+		if (millis() - transferStartTime > TransferTimeout)
+		{
+			// Bad image has been flashed - restart to bossa
+			debugPrintf("Timeout while exchanging checksum error\n");
+			Reset(false);
+		}
+		else if (is_spi_transfer_complete())
+		{
+			// Attempt to flash the firmware again
+			flashPos = IFLASH_ADDR;
+			state = WritingUpgrade;
+			retry = 0;
+		}
+		break;
+#endif
 
 	case LockingFlash:
 		// Lock each single page again
@@ -480,11 +785,13 @@ void writeBinary()
 	}
 }
 
+#ifndef IAP_VIA_SPI
 // Does what it says
 void closeBinary()
 {
 	f_close(&upgradeBinary);
 }
+#endif
 
 void Reset(bool success)
 {
@@ -505,7 +812,11 @@ void Reset(bool success)
 		cpu_irq_enable();
 	}
 
-	delay_ms(500);				// allow last message to PanelDue to go
+#ifdef IAP_VIA_SPI
+	digitalWrite(LinuxTfrReadyPin, false);
+#endif
+
+	delay_ms(500);							// allow last message to PanelDue to go
 
 #if SAM4E || SAM4S || SAME70
 	digitalWrite(DiagLedPin, false);		// turn the LED off
@@ -513,7 +824,7 @@ void Reset(bool success)
 
 	// Reboot
 	rstc_start_software_reset(RSTC);
-	while(true);
+	while(true) { }
 }
 
 /** Helper functions **/

@@ -1,4 +1,4 @@
-/* In-Application Programming application for RepRap Duet (Atmel SAM3X8E)
+/* In-Application Programming application for Duet3D platforms
  *
  * This application is first written by RepRapFirmware to the end of the second
  * Flash bank and then started by RepRapFirmware.
@@ -7,9 +7,11 @@
  * reading the new firmware binary from the SD card and replaces the corresponding
  * Flash content sector by sector.
  *
- * This application was written by Christian Hammacher (2016) and is
+ * This application was written by Christian Hammacher (2016-2019) and is
  * licensed under the terms of the GPL v2.
  */
+
+#ifndef IAP_H_INCLUDED
 
 #include "Core.h"
 
@@ -40,7 +42,7 @@ const Pin SdWriteProtectPins[NumSdCards] = { NoPin };
 const Pin SdSpiCSPins[2] = { 77 };
 const char * const defaultFwFile = "0:/sys/RepRapFirmware-Alligator.bin";	// Which file shall be used for IAP?
 const char * const fwFilePrefix = "0:/sys/RepRap";
-# else
+# else	// Duet 06/085
 #  define SERIAL_AUX_DEVICE Serial
 const size_t NumSdCards = 2;
 const Pin SdCardDetectPins[NumSdCards] = {NoPin, NoPin};				// Don't use the Card Detect pin on the Duet 085
@@ -51,7 +53,7 @@ const char * const fwFilePrefix = "0:/sys/RepRap";
 # endif
 #endif
 
-#if SAM4E
+#if SAM4E	// Duet 2 Ethernet/WiFi
 # define SERIAL_AUX_DEVICE Serial
 const size_t NumSdCards = 2;
 const Pin SdCardDetectPins[NumSdCards] = {53, NoPin};
@@ -62,7 +64,7 @@ const char * const defaultFwFile = "0:/sys/DuetWiFiFirmware.bin";		// Which file
 const char * const fwFilePrefix = "0:/sys/Duet";
 #endif
 
-#if SAM4S
+#if SAM4S	// Duet 2 Maestro
 # define SERIAL_AUX_DEVICE Serial
 const size_t NumSdCards = 2;
 const Pin SdCardDetectPins[NumSdCards] = {44, NoPin};
@@ -73,28 +75,40 @@ const char * const defaultFwFile = "0:/sys/DuetMaestroFirmware.bin";	// Which fi
 const char * const fwFilePrefix = "0:/sys/Duet";
 #endif
 
-#if SAME70
+#if SAME70	// Duet 3
 # define SERIAL_AUX_DEVICE Serial
 const size_t NumSdCards = 2;
+const Pin DiagLedPin = PortCPin(20);
 
-# ifdef SAME70XPLD
+# if defined(IAP_VIA_SPI)
 
-const Pin SdCardDetectPins[NumSdCards] = { PortCPin(16), NoPin };
-const Pin DiagLedPin = NoPin;
-const char * const defaultFwFile = "0:/sys/SAME70XPLDFirmware.bin";		// Which file shall we default to used for IAP?
-const char * const fwFilePrefix = "0:/sys/SAME70XPLD";
+const uint32_t LINUX_XDMAC_TX_CH_NUM = 3;
+const uint32_t LINUX_XDMAC_RX_CH_NUM = 4;
+const uint8_t DmacChanLinuxTx = 5;				// These two should be
+const uint8_t DmacChanLinuxRx = 6;				// kept in sync with RRF!
+const uint32_t NvicPrioritySpi = 1;
+const Pin LinuxTfrReadyPin = PortEPin(2);
+
+const uint32_t TransferCompleteDelay = 400;								// DCS waits 500ms when the firmware image has been transferred
+const uint32_t TransferTimeout = 2000;									// How long to wait before timing out
+
+struct FlashVerifyRequest
+{
+	uint32_t firmwareLength;
+	uint16_t crc16;
+	uint16_t dummy;
+};
 
 # else
 
 const Pin SdCardDetectPins[NumSdCards] = { PortAPin(6), NoPin };
-const Pin DiagLedPin = PortCPin(20);
+const Pin SdWriteProtectPins[NumSdCards] = { NoPin, NoPin };
+const Pin SdSpiCSPins[1] = { NoPin };
+
 const char * const defaultFwFile = "0:/sys/Duet3Firmware.bin";			// Which file shall we default to used for IAP?
 const char * const fwFilePrefix = "0:/sys/Duet3";
 
 # endif
-
-const Pin SdWriteProtectPins[NumSdCards] = { NoPin, NoPin };
-const Pin SdSpiCSPins[1] = { NoPin };
 
 # ifdef IAP_IN_RAM
 const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE;
@@ -129,17 +143,24 @@ enum ProcessState
 	ErasingFlash,
 #endif
 	WritingUpgrade,
-	LockingFlash
+	LockingFlash,
+#ifdef IAP_VIA_SPI
+	VerifyingChecksum,
+	SendingChecksumOK,
+	SendingChecksumError
+#endif
 };
 
-
+#ifndef IAP_VIA_SPI
 void initFilesystem();
 void getFirmwareFileName();
 void openBinary();
-void writeBinary();
 void closeBinary();
+#endif
+
+void writeBinary();
 void Reset(bool success);
 
 void sendUSB(uint32_t ep, const void* d, uint32_t len);
 
-// vim: ts=4:sw=4
+#endif	// IAP_H_INCLUDED
