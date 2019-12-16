@@ -159,7 +159,8 @@ extern "C" void AppMain()
 
 static xdmac_channel_config_t xdmac_tx_cfg, xdmac_rx_cfg;
 
-volatile bool dataReceived = false, transferPending = false, transferReadyHigh = false;
+volatile bool dataReceived = false, transferPending = false;
+bool transferReadyHigh = false;
 
 void setup_spi(size_t bytesToTransfer)
 {
@@ -481,7 +482,7 @@ void writeBinary()
 	switch (state)
 	{
 	case Initializing:
-		MessageF("Unlocking flash");	//TEMP
+		MessageF("Unlocking flash");
 		state = UnlockingFlash;
 		// no break
 	case UnlockingFlash:
@@ -507,7 +508,7 @@ void writeBinary()
 		{
 			flashPos = IFLASH_ADDR;
 #if SAM4E || SAM4S || SAME70
-			MessageF("Erasing flash");	//TEMP
+			MessageF("Erasing flash");
 			state = ErasingFlash;
 #else
 			bytesWritten = blockReadSize;
@@ -628,18 +629,17 @@ void writeBinary()
 				retry++;
 				break;
 			}
-#endif
 
 			// Have we finished the file?
 			if (bytesRead < blockReadSize)
 			{
-#ifndef IAP_VIA_SPI
 				// Yes - close it
 				closeBinary();
-#endif
+
 				// Now we just need to fill up the remaining part of the buffer with 0xFF
 				memset(readData + bytesRead, 0xFF, blockReadSize - bytesRead);
 			}
+#endif
 
 			haveDataInBuffer = true;
 			retry = 0;
@@ -669,7 +669,7 @@ void writeBinary()
 			}
 
 			// Verify the written data
-			if (memcmp(readData + bytesWritten, reinterpret_cast<void *>(flashPos), IFLASH_PAGE_SIZE) == 0)
+			if (memcmp(readData + bytesWritten, reinterpret_cast<const void *>(flashPos), IFLASH_PAGE_SIZE) == 0)
 			{
 				retry = 0;
 				bytesWritten += IFLASH_PAGE_SIZE;
@@ -678,15 +678,15 @@ void writeBinary()
 				if (bytesWritten == blockReadSize)
 				{
 					haveDataInBuffer = false;
-#ifdef IAP_VIA_SPI
-					setup_spi(sizeof(FlashVerifyRequest));
-					state = VerifyingChecksum;
-#else
 					if (bytesRead < blockReadSize)
 					{
+#ifdef IAP_VIA_SPI
+						setup_spi(sizeof(FlashVerifyRequest));
+						state = VerifyingChecksum;
+#else
 						state = LockingFlash;
-					}
 #endif
+					}
 				}
 			}
 			else
@@ -841,10 +841,11 @@ void debugPrintf(const char *fmt, ...)
 #endif
 }
 
-// Write message to aux.
+// Write message to PanelDue. Don't print messages on the Duet 3 because there is no dedicate PanelDue port on it.
 // The message must not contain any characters that need JSON escaping, such as newline or " or \.
 void MessageF(const char *fmt, ...)
 {
+#ifndef SAME70
 	va_list vargs;
 	va_start(vargs, fmt);
 	SafeVsnprintf(formatBuffer, ARRAY_SIZE(formatBuffer), fmt, vargs);
@@ -854,6 +855,7 @@ void MessageF(const char *fmt, ...)
 	SERIAL_AUX_DEVICE.print(formatBuffer);
 	SERIAL_AUX_DEVICE.print("\"}\n");
 	delay_ms(10);
+#endif
 }
 
 // The following functions are called by the startup code in CoreNG.
