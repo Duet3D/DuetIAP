@@ -63,7 +63,7 @@ size_t reportNextPercent = reportPercentIncrement;
 
 char formatBuffer[100];
 
-void checkLed()
+void checkLed() noexcept
 {
 #if SAM4E || SAM4S || SAME70
 	const uint32_t now = millis();
@@ -77,7 +77,7 @@ void checkLed()
 }
 
 // Our own version of delay() that keeps the LED up to date
-void delay_ms(uint32_t ms)
+void delay_ms(uint32_t ms) noexcept
 {
 	const uint32_t startTime = millis();
 	do
@@ -86,12 +86,12 @@ void delay_ms(uint32_t ms)
 	} while (millis() - startTime < ms);
 }
 
-void debugPrintf(const char *fmt, ...);			// forward declaration
-void MessageF(const char *fmt, ...);			// forward declaration
+void debugPrintf(const char *fmt, ...) noexcept;			// forward declaration
+void MessageF(const char *fmt, ...) noexcept;			// forward declaration
 
-extern "C" void UrgentInit() { }
+extern "C" void UrgentInit() noexcept { }
 
-extern "C" void SysTick_Handler(void)
+extern "C" void SysTick_Handler(void) noexcept
 {
 	CoreSysTick();
 	wdt_restart(WDT);							// kick the watchdog
@@ -101,10 +101,10 @@ extern "C" void SysTick_Handler(void)
 #endif
 }
 
-extern "C" void SVC_Handler() { for (;;) {} }
-extern "C" void PendSV_Handler() { for (;;) {} }
+extern "C" void SVC_Handler() noexcept { for (;;) {} }
+extern "C" void PendSV_Handler() noexcept { for (;;) {} }
 
-extern "C" void AppMain()
+extern "C" void AppMain() noexcept
 {
 	SysTickInit();
 
@@ -162,7 +162,7 @@ static xdmac_channel_config_t xdmac_tx_cfg, xdmac_rx_cfg;
 volatile bool dataReceived = false, transferPending = false;
 bool transferReadyHigh = false;
 
-void setup_spi(size_t bytesToTransfer)
+void setup_spi(size_t bytesToTransfer) noexcept
 {
 	// Reset SPI
 	spi_reset(SBC_SPI);
@@ -239,7 +239,7 @@ void setup_spi(size_t bytesToTransfer)
 	digitalWrite(LinuxTfrReadyPin, transferReadyHigh);
 }
 
-void disable_spi()
+void disable_spi() noexcept
 {
 	// Disable the XDMAC channels
 	xdmac_channel_disable(XDMAC, DmacChanLinuxRx);
@@ -253,7 +253,7 @@ void disable_spi()
 #  error SBC_SPI_HANDLER undefined
 # endif
 
-extern "C" void SBC_SPI_HANDLER(void)
+extern "C" void SBC_SPI_HANDLER(void) noexcept
 {
 	const uint32_t status = SBC_SPI->SPI_SR;							// read status and clear interrupt
 	SBC_SPI->SPI_IDR = SPI_IER_NSSR;									// disable the interrupt
@@ -265,7 +265,7 @@ extern "C" void SBC_SPI_HANDLER(void)
 	}
 }
 
-bool is_spi_transfer_complete()
+bool is_spi_transfer_complete() noexcept
 {
 	if (dataReceived && (xdmac_channel_get_status(XDMAC) & ((1 << DmacChanLinuxRx) | (1 << DmacChanLinuxTx))) == 0)
 	{
@@ -275,7 +275,7 @@ bool is_spi_transfer_complete()
 	return false;
 }
 
-uint16_t CRC16(const char *buffer, size_t length)
+uint16_t CRC16(const char *buffer, size_t length) noexcept
 {
 	const uint16_t crc16_table[] = {
         0x0000, 0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241,
@@ -325,7 +325,7 @@ uint16_t CRC16(const char *buffer, size_t length)
 
 #else
 
-void initFilesystem()
+void initFilesystem() noexcept
 {
 	debugPrintf("Initialising SD card... ");
 
@@ -399,7 +399,7 @@ void initFilesystem()
 // Determine the name of the firmware file we need to flash
 // Later releases of DuetWiFiFirmware and all releases of DuetEthernetFirmware put the initial stack pointer
 // a little below the top of RAM and store the firmware filename just above the stack
-void getFirmwareFileName()
+void getFirmwareFileName() noexcept
 {
 	const uint32_t vtab = SCB->VTOR & SCB_VTOR_TBLOFF_Msk;
 	const uint32_t stackTop = *reinterpret_cast<const uint32_t*>(vtab);
@@ -415,7 +415,7 @@ void getFirmwareFileName()
 }
 
 // Open the upgrade binary file so we can use it for flashing
-void openBinary()
+void openBinary() noexcept
 {
 	debugPrintf("Opening firmware binary... ");
 
@@ -455,7 +455,7 @@ void openBinary()
 
 #endif
 
-void ShowProgress()
+void ShowProgress() noexcept
 {
 	const size_t percentDone = (100 * (flashPos - IFLASH_ADDR))/(firmwareFlashEnd - IFLASH_ADDR);
 	if (percentDone >= reportNextPercent)
@@ -563,6 +563,9 @@ void writeBinary()
 			{
 				flashPos = IFLASH_ADDR;
 				haveDataInBuffer = false;
+#ifdef IAP_VIA_SPI
+				transferPending = false;
+#endif
 				state = WritingUpgrade;
 			}
 		}
@@ -593,6 +596,7 @@ void writeBinary()
 					{
 						// Timeout while waiting for new data
 						debugPrintf("ERROR: Timeout while waiting for response\n");
+						MessageF("ERROR: Timeout while waiting for response");
 						Reset(false);
 					}
 					break;
@@ -701,6 +705,7 @@ void writeBinary()
 		if (millis() - transferStartTime > TransferTimeout)
 		{
 			debugPrintf("Timeout while waiting for checksum\n");
+			MessageF("Timeout while waiting for checksum");
 			Reset(false);
 		}
 		else if (is_spi_transfer_complete())
@@ -718,6 +723,7 @@ void writeBinary()
 			{
 				// Checksum mismatch
 				debugPrintf("Checksum does not match\n");
+				MessageF("CRC mismatch");
 				writeData[0] = 0xFF;
 				state = SendingChecksumError;
 			}
@@ -730,7 +736,8 @@ void writeBinary()
 		if (millis() - transferStartTime > TransferTimeout)
 		{
 			// Although this is not expected, the firmware has been written successfully so just continue as normal
-			debugPrintf("Timeout while exchanging checksum acknowledgment\n");
+			MessageF("Timeout while exchanging checksum acknowledgement");
+			debugPrintf("Timeout while exchanging checksum acknowledgement\n");
 			state = LockingFlash;
 		}
 		else if (is_spi_transfer_complete())
@@ -745,6 +752,7 @@ void writeBinary()
 		{
 			// Bad image has been flashed - restart to bossa
 			debugPrintf("Timeout while exchanging checksum error\n");
+			MessageF("Timeout while reporting CRC error");
 			Reset(false);
 		}
 		else if (is_spi_transfer_complete())
@@ -787,13 +795,13 @@ void writeBinary()
 
 #ifndef IAP_VIA_SPI
 // Does what it says
-void closeBinary()
+void closeBinary() noexcept
 {
 	f_close(&upgradeBinary);
 }
 #endif
 
-void Reset(bool success)
+void Reset(bool success) noexcept
 {
 	// Only start from bootloader if the firmware couldn't be written entirely
 	if (!success && state >= WritingUpgrade)
@@ -829,7 +837,7 @@ void Reset(bool success)
 
 /** Helper functions **/
 
-void debugPrintf(const char *fmt, ...)
+void debugPrintf(const char *fmt, ...) noexcept
 {
 	va_list vargs;
 	va_start(vargs, fmt);
@@ -841,11 +849,10 @@ void debugPrintf(const char *fmt, ...)
 #endif
 }
 
-// Write message to PanelDue. Don't print messages on the Duet 3 because there is no dedicate PanelDue port on it.
+// Write message to PanelDue
 // The message must not contain any characters that need JSON escaping, such as newline or " or \.
-void MessageF(const char *fmt, ...)
+void MessageF(const char *fmt, ...) noexcept
 {
-#ifndef SAME70
 	va_list vargs;
 	va_start(vargs, fmt);
 	SafeVsnprintf(formatBuffer, ARRAY_SIZE(formatBuffer), fmt, vargs);
@@ -855,31 +862,30 @@ void MessageF(const char *fmt, ...)
 	SERIAL_AUX_DEVICE.print(formatBuffer);
 	SERIAL_AUX_DEVICE.print("\"}\n");
 	delay_ms(10);
-#endif
 }
 
 // The following functions are called by the startup code in CoreNG.
 // We define our own versions here to make the binary smaller, because we don't use the associated functionality.
-void AnalogInInit()
+void AnalogInInit() noexcept
 {
 }
 
-extern "C" void TWI0_Handler()
+extern "C" void TWI0_Handler() noexcept
 {
 }
 
-extern "C" void TWI1_Handler()
+extern "C" void TWI1_Handler() noexcept
 {
 }
 
 // Cache hooks called from the ASF. These are dummy because we run with the cache disabled.
-extern "C" void CacheFlushBeforeDMAReceive(const volatile void *start, size_t length) { }
-extern "C" void CacheInvalidateAfterDMAReceive(const volatile void *start, size_t length) { }
-extern "C" void CacheFlushBeforeDMASend(const volatile void *start, size_t length) { }
+extern "C" void CacheFlushBeforeDMAReceive(const volatile void *start, size_t length) noexcept { }
+extern "C" void CacheInvalidateAfterDMAReceive(const volatile void *start, size_t length) noexcept { }
+extern "C" void CacheFlushBeforeDMASend(const volatile void *start, size_t length) noexcept { }
 
 #if DEBUG
 // We have to use our own USB transmit function here, because the core will assume that the USB line is closed
-void sendUSB(uint32_t ep, const void* d, uint32_t len)
+void sendUSB(uint32_t ep, const void* d, uint32_t len) noexcept
 {
     uint32_t n;
 	int r = len;
