@@ -110,24 +110,23 @@ const char * const fwFilePrefix = "0:/sys/Duet3";
 
 # endif
 
-# ifdef IAP_IN_RAM
-const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE;
-# else
+# ifndef IAP_IN_RAM
 const uint32_t iapFirmwareSize = 0x20000;								// 128 KiB max (SAME70 has 128kb flash sectors so we can't erase a smaller amount)
 #endif
 
 #else	// not a SAME70 variant
 
-# ifdef IAP_IN_RAM
-const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE;
-# else
+# ifndef IAP_IN_RAM
 const uint32_t iapFirmwareSize = 0x10000;								// 64 KiB max
 # endif
 
-const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE - iapFirmwareSize;
-
 #endif
 
+#ifdef IAP_IN_RAM
+const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE;
+#else
+const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE - iapFirmwareSize;
+#endif
 
 // Read and write only 2 KiB of data at once (must be multiple of IFLASH_PAGE_SIZE).
 // Unfortunately we cannot increase this value further, because f_read() would mess up data
