@@ -87,7 +87,19 @@ const uint32_t LINUX_XDMAC_RX_CH_NUM = 4;
 const uint8_t DmacChanLinuxTx = 5;				// These two should be
 const uint8_t DmacChanLinuxRx = 6;				// kept in sync with RRF!
 const uint32_t NvicPrioritySpi = 1;
-const Pin LinuxTfrReadyPin = PortEPin(2);
+
+// Duet pin numbers for the Linux interface
+#define SBC_SPI					SPI1
+#define SBC_SPI_INTERFACE_ID	ID_SPI1
+#define SBC_SPI_IRQn			SPI1_IRQn
+#define SBC_SPI_HANDLER			SPI1_Handler
+
+constexpr Pin APIN_SBC_SPI_MOSI = APIN_SPI1_MOSI;
+constexpr Pin APIN_SBC_SPI_MISO = APIN_SPI1_MISO;
+constexpr Pin APIN_SBC_SPI_SCK = APIN_SPI1_SCK;
+constexpr Pin APIN_SBC_SPI_SS0 = APIN_SPI1_SS0;
+
+constexpr Pin LinuxTfrReadyPin = PortEPin(2);
 
 const uint32_t TransferCompleteDelay = 400;								// DCS waits 500ms when the firmware image has been transferred
 const uint32_t TransferTimeout = 2000;									// How long to wait before timing out
