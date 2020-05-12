@@ -54,14 +54,37 @@ const char * const fwFilePrefix = "0:/sys/RepRap";
 #endif
 
 #if SAM4E	// Duet 2 Ethernet/WiFi
+# define USE_DMAC  1
+# define USE_XDMAC 0
 # define SERIAL_AUX_DEVICE Serial
+constexpr Pin DiagLedPin = PortCPin(2);
+# ifndef IAP_VIA_SPI
 const size_t NumSdCards = 2;
 const Pin SdCardDetectPins[NumSdCards] = {53, NoPin};
 const Pin SdWriteProtectPins[NumSdCards] = {NoPin, NoPin};
 const Pin SdSpiCSPins[1] = {56};
-const Pin DiagLedPin = 34;
 const char * const defaultFwFile = "0:/sys/DuetWiFiFirmware.bin";		// Which file shall we default to used for IAP?
 const char * const fwFilePrefix = "0:/sys/Duet";
+
+# else
+// SPI interface and pins
+#define SBC_SPI					SPI
+#define SBC_SPI_INTERFACE_ID	ID_SPI
+#define SBC_SPI_IRQn			SPI_IRQn
+#define SBC_SPI_HANDLER			SPI_Handler
+constexpr Pin APIN_SBC_SPI_MOSI = APIN_SPI_MOSI;
+constexpr Pin APIN_SBC_SPI_MISO = APIN_SPI_MISO;
+constexpr Pin APIN_SBC_SPI_SCK  = APIN_SPI_SCK;
+constexpr Pin APIN_SBC_SPI_SS0  = APIN_SPI_SS0;
+
+// Hardware IDs of the SPI transmit and receive DMA interfaces. See atsam datasheet.
+const uint32_t SBC_SPI_TX_DMA_HW_ID = 1;
+const uint32_t SBC_SPI_RX_DMA_HW_ID = 2;
+
+constexpr Pin LinuxTfrReadyPin = PortDPin(30);
+constexpr uint8_t DmacChanLinuxTx = 1;				// These two should be
+constexpr uint8_t DmacChanLinuxRx = 2;				// kept in sync with RRF!
+# endif
 #endif
 
 #if SAM4S	// Duet 2 Maestro
@@ -76,6 +99,8 @@ const char * const fwFilePrefix = "0:/sys/Duet";
 #endif
 
 #if SAME70	// Duet 3
+# define USE_DMAC  0
+# define USE_XDMAC 1
 # define SERIAL_AUX_DEVICE Serial
 const size_t NumSdCards = 2;
 const Pin DiagLedPin = PortCPin(20);
@@ -86,7 +111,6 @@ const uint32_t LINUX_XDMAC_TX_CH_NUM = 3;
 const uint32_t LINUX_XDMAC_RX_CH_NUM = 4;
 const uint8_t DmacChanLinuxTx = 5;				// These two should be
 const uint8_t DmacChanLinuxRx = 6;				// kept in sync with RRF!
-const uint32_t NvicPrioritySpi = 1;
 
 // Duet pin numbers for the Linux interface
 #define SBC_SPI					SPI1
@@ -100,18 +124,6 @@ constexpr Pin APIN_SBC_SPI_SCK = APIN_SPI1_SCK;
 constexpr Pin APIN_SBC_SPI_SS0 = APIN_SPI1_SS0;
 
 constexpr Pin LinuxTfrReadyPin = PortEPin(2);
-
-const uint32_t TransferCompleteDelay = 400;								// DCS waits 500ms when the firmware image has been transferred
-const uint32_t TransferTimeout = 2000;									// How long to wait before timing out
-
-struct FlashVerifyRequest
-{
-	uint32_t firmwareLength;
-	uint16_t crc16;
-	uint16_t dummy;
-};
-
-# else
 
 const Pin SdCardDetectPins[NumSdCards] = { PortAPin(6), NoPin };
 const Pin SdWriteProtectPins[NumSdCards] = { NoPin, NoPin };
@@ -138,6 +150,20 @@ const uint32_t iapFirmwareSize = 0x10000;								// 64 KiB max
 const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE;
 #else
 const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE - iapFirmwareSize;
+#endif
+
+#ifdef IAP_VIA_SPI
+
+const uint32_t NvicPrioritySpi = 1;
+const uint32_t TransferCompleteDelay = 400;								// DCS waits 500ms when the firmware image has been transferred
+const uint32_t TransferTimeout = 2000;									// How long to wait before timing out
+
+struct FlashVerifyRequest
+{
+	uint32_t firmwareLength;
+	uint16_t crc16;
+	uint16_t dummy;
+};
 #endif
 
 // Read and write only 2 KiB of data at once (must be multiple of IFLASH_PAGE_SIZE).

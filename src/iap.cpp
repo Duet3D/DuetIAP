@@ -27,6 +27,18 @@
 
 #if SAM4E || SAM4S || SAME70
 
+# ifdef IAP_VIA_SPI
+
+# if USE_DMAC
+# include "dmac/dmac.h"
+# include "matrix/matrix.h"
+# endif
+
+# if USE_XDMAC
+# include "xdmac/xdmac.h"
+# endif
+#endif // IAP_VIA_SPI
+
 // Later Duets have a diagnostic LED, which we flash regularly to indicate activity
 const uint32_t LedOnOffMillis = 100;
 
@@ -116,12 +128,30 @@ extern "C" void AppMain() noexcept
 	ConfigurePin(APIN_SBC_SPI_SCK);
 	ConfigurePin(APIN_SBC_SPI_SS0);
 
+#if USE_DMAC
+	pmc_enable_periph_clk(ID_DMAC);
+	NVIC_DisableIRQ(DMAC_IRQn);
+# elif USE_XDMAC
 	pmc_enable_periph_clk(ID_XDMAC);
 	NVIC_DisableIRQ(XDMAC_IRQn);
+# endif
 
 	spi_enable_clock(SBC_SPI);
 	spi_disable(SBC_SPI);
-#endif
+# if USE_DMAC
+	dmac_init(DMAC);
+	dmac_set_priority_mode(DMAC, DMAC_PRIORITY_ROUND_ROBIN);
+	dmac_enable(DMAC);
+
+	// The DMAC is master 4 and the SRAM is slave 0. Give the DMAC the highest priority.
+	matrix_set_slave_default_master_type(0, MATRIX_DEFMSTR_LAST_DEFAULT_MASTER);
+	matrix_set_slave_priority(0, (3 << MATRIX_PRAS0_M4PR_Pos));
+	// Set the slave slot cycle limit.
+	// If we leave it at the default value of 511 clock cycles, we get transmit underruns due to the HSMCI using the bus for too long.
+	// A value of 8 seems to work. I haven't tried other values yet.
+	matrix_set_slave_slot_cycle(0, 8);
+# endif
+#endif // IAP_VIA_SPI
 
 #if SAM4E || SAM4S || SAME70
 	digitalWrite(DiagLedPin, true);				// turn the LED on
@@ -155,9 +185,9 @@ extern "C" void AppMain() noexcept
 
 #ifdef IAP_VIA_SPI
 
-# include "xdmac/xdmac.h"
-
+# if USE_XDMAC
 static xdmac_channel_config_t xdmac_tx_cfg, xdmac_rx_cfg;
+# endif
 
 volatile bool dataReceived = false, transferPending = false;
 bool transferReadyHigh = false;
@@ -172,7 +202,59 @@ void setup_spi(size_t bytesToTransfer) noexcept
 	spi_set_clock_polarity(SBC_SPI, 0, 0);
 	spi_set_clock_phase(SBC_SPI, 0, 1);
 	spi_set_bits_per_transfer(SBC_SPI, 0, SPI_CSR_BITS_8_BIT);
+# if USE_DMAC
+	dmac_channel_disable(DMAC, DmacChanLinuxRx);
+	dmac_channel_disable(DMAC, DmacChanLinuxTx);
 
+	DMAC->DMAC_EBCISR;		// clear any pending interrupts
+
+	// Initialize channel config for transmitter
+	dmac_channel_set_source_addr(DMAC, DmacChanLinuxTx, reinterpret_cast<uint32_t>(writeData));
+	dmac_channel_set_destination_addr(DMAC, DmacChanLinuxTx, reinterpret_cast<uint32_t>(&(SBC_SPI->SPI_TDR)));
+	dmac_channel_set_descriptor_addr(DMAC, DmacChanLinuxTx, 0);
+	dmac_channel_set_ctrlA(DMAC, DmacChanLinuxTx,
+			bytesToTransfer |
+			DMAC_CTRLA_SRC_WIDTH_WORD |
+			DMAC_CTRLA_DST_WIDTH_BYTE);
+	dmac_channel_set_ctrlB(DMAC, DmacChanLinuxTx,
+		DMAC_CTRLB_SRC_DSCR |
+		DMAC_CTRLB_DST_DSCR |
+		DMAC_CTRLB_FC_MEM2PER_DMA_FC |
+		DMAC_CTRLB_SRC_INCR_INCREMENTING |
+		DMAC_CTRLB_DST_INCR_FIXED);
+
+	// Initialize channel config for receiver
+	dmac_channel_set_source_addr(DMAC, DmacChanLinuxRx, reinterpret_cast<uint32_t>(&(SBC_SPI->SPI_RDR)));
+	dmac_channel_set_destination_addr(DMAC, DmacChanLinuxRx, reinterpret_cast<uint32_t>(readData));
+	dmac_channel_set_descriptor_addr(DMAC, DmacChanLinuxRx, 0);
+	dmac_channel_set_ctrlA(DMAC, DmacChanLinuxRx,
+			bytesToTransfer |
+			DMAC_CTRLA_SRC_WIDTH_BYTE |
+			DMAC_CTRLA_DST_WIDTH_WORD);
+	dmac_channel_set_ctrlB(DMAC, DmacChanLinuxRx,
+		DMAC_CTRLB_SRC_DSCR |
+		DMAC_CTRLB_DST_DSCR |
+		DMAC_CTRLB_FC_PER2MEM_DMA_FC |
+		DMAC_CTRLB_SRC_INCR_FIXED |
+		DMAC_CTRLB_DST_INCR_INCREMENTING);
+
+	dmac_channel_enable(DMAC, DmacChanLinuxRx);
+	dmac_channel_enable(DMAC, DmacChanLinuxTx);
+
+	// Configure DMA RX channel
+	dmac_channel_set_configuration(DMAC, DmacChanLinuxRx,
+			DMAC_CFG_SRC_PER(SBC_SPI_RX_DMA_HW_ID) |
+			DMAC_CFG_SRC_H2SEL |
+			DMAC_CFG_SOD |
+			DMAC_CFG_FIFOCFG_ASAP_CFG);
+
+	// Configure DMA TX channel
+	dmac_channel_set_configuration(DMAC, DmacChanLinuxTx,
+			DMAC_CFG_DST_PER(SBC_SPI_TX_DMA_HW_ID) |
+			DMAC_CFG_DST_H2SEL |
+			DMAC_CFG_SOD |
+			DMAC_CFG_FIFOCFG_ASAP_CFG);
+# elif USE_XDMAC
 	// Initialize channel config for transmitter
 	xdmac_tx_cfg.mbr_ubc = bytesToTransfer;
 	xdmac_tx_cfg.mbr_sa = (uint32_t)writeData;
@@ -220,6 +302,7 @@ void setup_spi(size_t bytesToTransfer) noexcept
 	xdmac_channel_set_descriptor_control(XDMAC, DmacChanLinuxRx, 0);
 	xdmac_channel_enable(XDMAC, DmacChanLinuxRx);
 	xdmac_disable_interrupt(XDMAC, DmacChanLinuxRx);
+# endif
 
 	// Enable SPI and notify the RaspPi we are ready
 	spi_enable(SBC_SPI);
@@ -241,9 +324,15 @@ void setup_spi(size_t bytesToTransfer) noexcept
 
 void disable_spi() noexcept
 {
-	// Disable the XDMAC channels
+# if USE_DMAC
+	dmac_channel_disable(DMAC, DmacChanLinuxRx);
+	dmac_channel_disable(DMAC, DmacChanLinuxTx);
+# endif
+
+# if USE_XDMAC
 	xdmac_channel_disable(XDMAC, DmacChanLinuxRx);
 	xdmac_channel_disable(XDMAC, DmacChanLinuxTx);
+# endif
 
 	// Disable SPI
 	spi_disable(SBC_SPI);
@@ -267,12 +356,28 @@ extern "C" void SBC_SPI_HANDLER(void) noexcept
 
 bool is_spi_transfer_complete() noexcept
 {
+# if USE_DMAC
+	const uint32_t status = DMAC->DMAC_CHSR;
+	if (dataReceived &&
+		  (((status & (DMAC_CHSR_ENA0 << DmacChanLinuxRx)) == 0)	// controller is not enabled, perhaps because it finished a full buffer transfer
+		|| ((status & (DMAC_CHSR_EMPT0 << DmacChanLinuxRx)) != 0))	// controller is enabled, probably suspended, and the FIFO is empty
+	   )
+	{
+		// Disable the channel.
+		// We also need to set the resume bit, otherwise it remains suspended when we re-enable it.
+		DMAC->DMAC_CHDR = (DMAC_CHDR_DIS0 << DmacChanLinuxRx) | (DMAC_CHDR_RES0 << DmacChanLinuxRx);
+		transferPending = false;
+		return true;
+	}
+	return false;
+# elif USE_XDMAC
 	if (dataReceived && (xdmac_channel_get_status(XDMAC) & ((1 << DmacChanLinuxRx) | (1 << DmacChanLinuxTx))) == 0)
 	{
 		transferPending = false;
 		return true;
 	}
 	return false;
+# endif
 }
 
 uint16_t CRC16(const char *buffer, size_t length) noexcept
