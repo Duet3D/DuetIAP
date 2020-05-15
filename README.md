@@ -1,7 +1,7 @@
 # DuetIAP
 In-application programming solution for the Duet platform
 
-Build instructions for dc42 fork
+Build instructions
 ================================
 1. Set up an Eclipse workspace for building projects RepRapFirmware and CoreNG (see my RepRapFirmware repository).
 
