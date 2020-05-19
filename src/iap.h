@@ -81,7 +81,7 @@ constexpr Pin APIN_SBC_SPI_SS0  = APIN_SPI_SS0;
 const uint32_t SBC_SPI_TX_DMA_HW_ID = 1;
 const uint32_t SBC_SPI_RX_DMA_HW_ID = 2;
 
-constexpr Pin LinuxTfrReadyPin = PortDPin(30);
+constexpr Pin LinuxTfrReadyPin = PortDPin(31);
 constexpr uint8_t DmacChanLinuxTx = 1;				// These two should be
 constexpr uint8_t DmacChanLinuxRx = 2;				// kept in sync with RRF!
 # endif
