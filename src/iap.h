@@ -81,9 +81,9 @@ constexpr Pin APIN_SBC_SPI_SS0  = APIN_SPI_SS0;
 const uint32_t SBC_SPI_TX_DMA_HW_ID = 1;
 const uint32_t SBC_SPI_RX_DMA_HW_ID = 2;
 
-constexpr Pin LinuxTfrReadyPin = PortDPin(31);
-constexpr uint8_t DmacChanLinuxTx = 1;				// These two should be
-constexpr uint8_t DmacChanLinuxRx = 2;				// kept in sync with RRF!
+constexpr Pin SbcTfrReadyPin = PortDPin(31);
+constexpr uint8_t DmacChanSbcTx = 1;				// These two should be
+constexpr uint8_t DmacChanSbcRx = 2;				// kept in sync with RRF!
 # endif
 #endif
 
@@ -107,12 +107,12 @@ const Pin DiagLedPin = PortCPin(20);
 
 # if defined(IAP_VIA_SPI)
 
-const uint32_t LINUX_XDMAC_TX_CH_NUM = 3;
-const uint32_t LINUX_XDMAC_RX_CH_NUM = 4;
-const uint8_t DmacChanLinuxTx = 5;				// These two should be
-const uint8_t DmacChanLinuxRx = 6;				// kept in sync with RRF!
+const uint32_t SBC_SPI_TX_PERID = 3;
+const uint32_t SBC_SPI_RX_PERID = 4;
+const uint8_t DmacChanSbcTx = 5;				// These two should be
+const uint8_t DmacChanSbcRx = 6;				// kept in sync with RRF!
 
-// Duet pin numbers for the Linux interface
+// Duet pin numbers for the SBC interface
 #define SBC_SPI					SPI1
 #define SBC_SPI_INTERFACE_ID	ID_SPI1
 #define SBC_SPI_IRQn			SPI1_IRQn
@@ -123,7 +123,7 @@ constexpr Pin APIN_SBC_SPI_MISO = APIN_SPI1_MISO;
 constexpr Pin APIN_SBC_SPI_SCK = APIN_SPI1_SCK;
 constexpr Pin APIN_SBC_SPI_SS0 = APIN_SPI1_SS0;
 
-constexpr Pin LinuxTfrReadyPin = PortEPin(2);
+constexpr Pin SbcTfrReadyPin = PortEPin(2);
 
 const Pin SdCardDetectPins[NumSdCards] = { PortAPin(6), NoPin };
 const Pin SdWriteProtectPins[NumSdCards] = { NoPin, NoPin };
