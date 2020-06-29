@@ -48,7 +48,7 @@ extern "C" {
 /**INDENT-ON**/
 /// @endcond
 
-#include "ctrl_access.h"
+#include "Libraries/sd_mmc/ctrl_access.h"
 #include "compiler.h"
 
 #include "diskio.h"
@@ -102,17 +102,10 @@ DSTATUS disk_initialize(BYTE drv)
 	//rtc_set_hour_mode(RTC, 0);
 #endif
 
-#if LUN_USB
-	/* USB disk with multiple LUNs */
-	if (drv > LUN_ID_USB + Lun_usb_get_lun()) {
-		return STA_NOINIT;
-	}
-#else
 	if (drv > MAX_LUN) {
 		/* At least one of the LUN should be defined */
 		return STA_NOINIT;
 	}
-#endif
 	/* Check LUN ready (USB disk report CTRL_BUSY then CTRL_GOOD) */
 	for (i = 0; i < 2; i ++) {
 		mem_status = mem_test_unit_ready(drv);
@@ -166,7 +159,6 @@ DSTATUS disk_status(BYTE drv)
 DRESULT disk_read(BYTE drv, BYTE *buff, DWORD sector, BYTE count)
 {
 //	debugPrintf("R %u %u\n", sector, count);
-#if ACCESS_MEM_TO_RAM
 	uint8_t uc_sector_size = mem_sector_size(drv);
 	uint32_t ul_last_sector_num;
 
@@ -186,10 +178,6 @@ DRESULT disk_read(BYTE drv, BYTE *buff, DWORD sector, BYTE count)
 	}
 
 	return RES_OK;
-
-#else
-	return RES_ERROR;
-#endif
 }
 
 /**
@@ -211,7 +199,6 @@ DRESULT disk_read(BYTE drv, BYTE *buff, DWORD sector, BYTE count)
 DRESULT disk_write(BYTE drv, BYTE const *buff, DWORD sector, BYTE count)
 {
 //	debugPrintf("W %u %u\n", sector, count);
-#if ACCESS_MEM_TO_RAM
 	uint8_t uc_sector_size = mem_sector_size(drv);
 	uint32_t ul_last_sector_num;
 
@@ -232,10 +219,6 @@ DRESULT disk_write(BYTE drv, BYTE const *buff, DWORD sector, BYTE count)
 	}
 
 	return RES_OK;
-
-#else
-	return RES_ERROR;
-#endif
 }
 
 #endif /* _READONLY */
