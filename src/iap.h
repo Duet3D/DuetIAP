@@ -125,12 +125,14 @@ constexpr Pin APIN_SBC_SPI_SS0 = APIN_SPI1_SS0;
 
 constexpr Pin SbcTfrReadyPin = PortEPin(2);
 
-const Pin SdCardDetectPins[NumSdCards] = { PortAPin(6), NoPin };
-const Pin SdWriteProtectPins[NumSdCards] = { NoPin, NoPin };
-const Pin SdSpiCSPins[1] = { NoPin };
+# else
 
 const char * const defaultFwFile = "0:/sys/Duet3Firmware.bin";			// Which file shall we default to used for IAP?
 const char * const fwFilePrefix = "0:/sys/Duet3";
+
+const Pin SdCardDetectPins[NumSdCards] = { PortAPin(6), NoPin };
+const Pin SdWriteProtectPins[NumSdCards] = { NoPin, NoPin };
+const Pin SdSpiCSPins[1] = { NoPin };
 
 # endif
 
