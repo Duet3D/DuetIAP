@@ -12,8 +12,16 @@
  */
 
 #include "iap.h"
-#include "DueFlashStorage.h"
-#include "rstc/rstc.h"
+
+#if SAME5x
+# include <Uart.h>
+extern Uart serialUart0;
+# define SERIAL_AUX_DEVICE serialUart0
+#else
+# include "rstc/rstc.h"
+# include "flash_efc.h"
+#endif
+
 #include <General/SafeVsnprintf.h>
 
 #ifndef IAP_VIA_SPI
@@ -22,10 +30,11 @@
 #endif
 
 #include <cstdarg>
+#include <cstring>
 
 #define DEBUG	0
 
-#if SAM4E || SAM4S || SAME70
+#if SAM4E || SAM4S || SAME70 || SAME5x
 
 # ifdef IAP_VIA_SPI
 
@@ -98,7 +107,7 @@ void delay_ms(uint32_t ms) noexcept
 	} while (millis() - startTime < ms);
 }
 
-void debugPrintf(const char *fmt, ...) noexcept;			// forward declaration
+void debugPrintf(const char *fmt, ...) noexcept;		// forward declaration
 void MessageF(const char *fmt, ...) noexcept;			// forward declaration
 
 extern "C" void UrgentInit() noexcept { }
@@ -106,7 +115,11 @@ extern "C" void UrgentInit() noexcept { }
 extern "C" void SysTick_Handler(void) noexcept
 {
 	CoreSysTick();
+#if SAME5x
+	watchdogReset();
+#else
 	wdt_restart(WDT);							// kick the watchdog
+#endif
 
 #if SAM4E || SAME70
 	rswdt_restart(RSWDT);						// kick the secondary watchdog
@@ -118,7 +131,13 @@ extern "C" void PendSV_Handler() noexcept { for (;;) {} }
 
 extern "C" void AppMain() noexcept
 {
+#if SAME5x
+	// Initialise systick (needed for delay calls)
+	SysTick->LOAD = ((SystemCoreClock/1000) - 1) << SysTick_LOAD_RELOAD_Pos;
+	SysTick->CTRL = (1 << SysTick_CTRL_ENABLE_Pos) | (1 << SysTick_CTRL_TICKINT_Pos) | (1 << SysTick_CTRL_CLKSOURCE_Pos);
+#else
 	SysTickInit();
+#endif
 
 #ifdef IAP_VIA_SPI
 	pinMode(SbcTfrReadyPin, OUTPUT_LOW);
@@ -128,7 +147,7 @@ extern "C" void AppMain() noexcept
 	ConfigurePin(APIN_SBC_SPI_SCK);
 	ConfigurePin(APIN_SBC_SPI_SS0);
 
-#if USE_DMAC
+# if USE_DMAC
 	pmc_enable_periph_clk(ID_DMAC);
 	NVIC_DisableIRQ(DMAC_IRQn);
 # elif USE_XDMAC
@@ -612,7 +631,7 @@ void writeBinary()
 		if (flashPos >= firmwareFlashEnd)
 		{
 			flashPos = IFLASH_ADDR;
-#if SAM4E || SAM4S || SAME70
+#if SAM4E || SAM4S || SAME70 || SAME5x
 			MessageF("Erasing flash");
 			state = ErasingFlash;
 #else
@@ -622,7 +641,7 @@ void writeBinary()
 		}
 		break;
 
-#if SAM4E || SAM4S || SAME70
+#if SAM4E || SAM4S || SAME70 || SAME5x
 	case ErasingFlash:
 		debugPrintf("Erasing 0x%08x\n", flashPos);
 		if (retry != 0)
@@ -632,8 +651,10 @@ void writeBinary()
 
 		{
 			const uint32_t sectorSize =
-# if SAM4E || SAM4S
-				// Deal with varying size sectors on the SAM4E
+# if SAME5x
+				qq;
+# elif SAM4E || SAM4S
+				// Deal with varying size sectors on the SAM4E and SAM4S
 				// There are two 8K sectors, then one 48K sector, then seven 64K sectors
 				(flashPos - IFLASH_ADDR < 16 * 1024) ? 8 * 1024
 					: (flashPos - IFLASH_ADDR == 16 * 1024) ? 48 * 1024
@@ -919,8 +940,10 @@ void Reset(bool success) noexcept
 		flash_write(IFLASH_ADDR, formatBuffer, strlen(formatBuffer), 1);
 		// no reason to lock it again
 
+#if !SAME5x
 		// Start from bootloader next time
 		flash_clear_gpnvm(1);
+#endif
 
 		cpu_irq_enable();
 	}
@@ -936,7 +959,7 @@ void Reset(bool success) noexcept
 #endif
 
 	// Reboot
-	rstc_start_software_reset(RSTC);
+	Reset();
 	while(true) { }
 }
 

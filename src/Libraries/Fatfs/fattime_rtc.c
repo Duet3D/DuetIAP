@@ -40,7 +40,7 @@
  * \asf_license_stop
  *
  */
-#include "compiler.h"
+#include <Core.h>
 
 uint32_t get_fattime(void);
 /**

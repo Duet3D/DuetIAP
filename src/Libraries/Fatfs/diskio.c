@@ -48,11 +48,9 @@ extern "C" {
 /**INDENT-ON**/
 /// @endcond
 
-#include "Libraries/sd_mmc/ctrl_access.h"
-#include "compiler.h"
-
 #include "diskio.h"
 
+#include "Libraries/sd_mmc/ctrl_access.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -95,12 +93,6 @@ DSTATUS disk_initialize(BYTE drv)
 {
 	int i;
 	Ctrl_status mem_status;
-
-#if (SAM3S || SAM3U || SAM3N || SAM3XA || SAM4S)
-	/* Default RTC configuration, 24-hour mode */
-	/**@TODO FIX THIS - need an RTC*/
-	//rtc_set_hour_mode(RTC, 0);
-#endif
 
 	if (drv > MAX_LUN) {
 		/* At least one of the LUN should be defined */
@@ -266,7 +258,7 @@ DRESULT disk_ioctl(BYTE drv, BYTE ctrl, void *buff)
 		/* Check valid address */
 		mem_read_capacity(drv, &ul_last_sector_num);
 
-		*(DWORD *)buff = ul_last_sector_num + 1;
+		*(uint32_t*)buff = ul_last_sector_num + 1;
 
 		res = RES_OK;
 	}
@@ -285,7 +277,7 @@ DRESULT disk_ioctl(BYTE drv, BYTE ctrl, void *buff)
 			return RES_ERROR;
 		}
 
-		*(U8 *)buff = uc_sector_size * SECTOR_SIZE_DEFAULT;
+		*(uint8_t *)buff = uc_sector_size * SECTOR_SIZE_DEFAULT;
 
 		res = RES_OK;
 	}

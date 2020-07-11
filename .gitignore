@@ -1,3 +1,7 @@
+# Misc
+.settings/
+
+# Output folders
 /SAM3X_Release/
 /SAM4E_Release/
 /SAME70XPLD/
@@ -11,4 +15,4 @@
 /SAM4E_RAM/
 /SAM4E_SPI_RAM/
 /SAM4S_RAM/
-.settings/
+/Duet3Mini_SD_RAM/

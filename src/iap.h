@@ -13,14 +13,21 @@
 
 #ifndef IAP_H_INCLUDED
 
-#include "Core.h"
+#include <Core.h>
 
-#if SAM4S
+#if SAME5x
+# include <CoreIO.h>
+# define IFLASH_ADDR		(FLASH_ADDR)
+# define IFLASH_SIZE		(FLASH_SIZE)
+# define IFLASH_PAGE_SIZE	(FLASH_PAGE_SIZE)
+#elif SAM4S
 # define IFLASH_ADDR		(IFLASH0_ADDR)
 # define IFLASH_PAGE_SIZE	(IFLASH0_PAGE_SIZE)
 #elif SAM3XA
 # define IFLASH_ADDR		(IFLASH0_ADDR)
 # define IFLASH_PAGE_SIZE	(IFLASH1_PAGE_SIZE)
+#else
+// IFLASH_ADDR and IFLASH_PAGE_SIZE are already defined for the SAM4E and the SAME70
 #endif
 
 const size_t baudRate = 115200;						// For USB diagnostics
@@ -135,22 +142,69 @@ const Pin SdWriteProtectPins[NumSdCards] = { NoPin, NoPin };
 const Pin SdSpiCSPins[1] = { NoPin };
 
 # endif
+#endif	// SAME70
 
-# ifndef IAP_IN_RAM
-const uint32_t iapFirmwareSize = 0x20000;								// 128 KiB max (SAME70 has 128kb flash sectors so we can't erase a smaller amount)
-#endif
+#if SAME5x	// Duet 3 Mini
+# define USE_DMAC 			0
+# define USE_XDMAC 			0
+# define USE_DMAC_MANAGER	1
 
-#else	// not a SAME70 variant
+// Serial on IO0
+constexpr uint8_t Serial0SercomNumber = 2;
+constexpr uint8_t Sercom0RxPad = 1;
+#define SERIAL0_ISR0	SERCOM2_0_Handler
+#define SERIAL0_ISR1	SERCOM2_1_Handler
+#define SERIAL0_ISR2	SERCOM2_2_Handler
+#define SERIAL0_ISR3	SERCOM2_3_Handler
 
-# ifndef IAP_IN_RAM
-const uint32_t iapFirmwareSize = 0x10000;								// 64 KiB max
+constexpr Pin Serial0TxPin = PortBPin(25);
+constexpr Pin Serial0RxPin = PortBPin(24);
+constexpr GpioPinFunction Serial0PinFunction = GpioPinFunction::D;
+
+const size_t NumSdCards = 1;
+const Pin DiagLedPin = PortAPin(31);
+
+# if defined(IAP_VIA_SPI)
+
+//TODO equivalent definitions for using a SERCOM and DmacManager
+//const uint32_t SBC_SPI_TX_PERID = 3;
+//const uint32_t SBC_SPI_RX_PERID = 4;
+//const uint8_t DmacChanSbcTx = 5;				// These two should be
+//const uint8_t DmacChanSbcRx = 6;				// kept in sync with RRF!
+
+// Duet pin numbers for the SBC interface
+//#define SBC_SPI					SPI1qq
+//#define SBC_SPI_INTERFACE_ID	ID_SPI1qq
+//#define SBC_SPI_IRQn			SPI1_IRQn
+//#define SBC_SPI_HANDLER			SPI1_Handler
+
+//constexpr Pin APIN_SBC_SPI_MOSI = APIN_SPI1_MOSI;qq
+//constexpr Pin APIN_SBC_SPI_MISO = APIN_SPI1_MISO;qq
+//constexpr Pin APIN_SBC_SPI_SCK = APIN_SPI1_SCK;qq
+//constexpr Pin APIN_SBC_SPI_SS0 = APIN_SPI1_SS0;qq
+
+constexpr Pin SbcTfrReadyPin = PortBPin(7);
+
+# else
+
+const char * const defaultFwFile = "0:/sys/Duet3Firmware_Mini5plus.bin";			// Which file shall we default to used for IAP?
+const char * const fwFilePrefix = "0:/sys/Duet3";
+
+const Pin SdCardDetectPins[NumSdCards] = { PortBPin(16) };
+const Pin SdWriteProtectPins[NumSdCards] = { NoPin };
+const Pin SdSpiCSPins[1] = { NoPin };
+
 # endif
-
-#endif
+#endif	// SAME70
 
 #ifdef IAP_IN_RAM
 const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE;
 #else
+# if SAME70
+const uint32_t iapFirmwareSize = 0x20000;								// 128 KiB max (SAME70 has 128kb flash sectors so we can't erase a smaller amount)
+# else
+const uint32_t iapFirmwareSize = 0x10000;								// 64 KiB max
+# endif
 const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE - iapFirmwareSize;
 #endif
 
@@ -178,7 +232,7 @@ enum ProcessState
 {
 	Initializing,
 	UnlockingFlash,
-#if SAM4E || SAM4S || SAME70
+#if SAM4E || SAM4S || SAME70 || SAME5x
 	ErasingFlash,
 #endif
 	WritingUpgrade,

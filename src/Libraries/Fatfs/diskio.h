@@ -4,11 +4,12 @@
 
 #ifndef _DISKIO
 
+#include <Core.h>
+
 #define _READONLY	0	/* 1: Remove write functions */
 #define _USE_IOCTL	1	/* 1: Use disk_ioctl fucntion */
 
 #include "integer.h"
-
 
 /* Status of Disk Functions */
 typedef BYTE	DSTATUS;
