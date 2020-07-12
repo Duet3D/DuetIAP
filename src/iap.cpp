@@ -15,10 +15,10 @@
 
 #if SAME5x
 # include <Uart.h>
-extern Uart serialUart0;
-# define SERIAL_AUX_DEVICE serialUart0
+# include <Flash.h>
+extern Uart *serialUart0;
+# define SERIAL_AUX_DEVICE (*serialUart0)
 #else
-# include "rstc/rstc.h"
 # include "flash_efc.h"
 #endif
 
@@ -70,11 +70,11 @@ const char* fwFile = defaultFwFile;
 
 #endif
 
-uint32_t readData32[(blockReadSize + 3) / 4];	// use aligned memory so DMA works well
-char * const readData = reinterpret_cast<char *>(readData32);
+alignas(4) char readData[blockReadSize];	// use aligned memory so DMA works well
 
 ProcessState state = Initializing;
-uint32_t flashPos = IFLASH_ADDR;
+uint32_t pageSize;
+uint32_t flashPos = FirmwareFlashStart;
 
 size_t retry = 0;
 size_t bytesRead, bytesWritten;
@@ -86,15 +86,13 @@ char formatBuffer[100];
 
 void checkLed() noexcept
 {
-#if SAM4E || SAM4S || SAME70
 	const uint32_t now = millis();
 	if (now - lastLedMillis >= LedOnOffMillis)
 	{
 		ledIsOn = !ledIsOn;
-		digitalWrite(DiagLedPin, ledIsOn);
+		digitalWrite(DiagLedPin, XNor(ledIsOn, LedOnPolarity));
 		lastLedMillis = now;
 	}
-#endif
 }
 
 // Our own version of delay() that keeps the LED up to date
@@ -172,11 +170,9 @@ extern "C" void AppMain() noexcept
 # endif
 #endif // IAP_VIA_SPI
 
-#if SAM4E || SAM4S || SAME70
-	digitalWrite(DiagLedPin, true);				// turn the LED on
+	digitalWrite(DiagLedPin, LedOnPolarity);	// turn the LED on
 	ledIsOn = true;
 	lastLedMillis = millis();
-#endif
 
 	SERIAL_AUX_DEVICE.begin(57600);				// set serial port to default PanelDue baud rate
 	MessageF("IAP started");
@@ -184,6 +180,19 @@ extern "C" void AppMain() noexcept
 	debugPrintf("IAP Utility for Duet electronics\n");
 	debugPrintf("Developed by Christian Hammacher (2016-2019)\n");
 	debugPrintf("Licensed under the terms of the GPLv2\n\n");
+
+#if SAME5x
+	if (!Flash::Init())
+	{
+		MessageF("Failed to initialize flash controller");
+		debugPrintf("Failed to initialize flash controller\n");
+		Reset();
+	}
+
+	pageSize = Flash::GetPageSize();
+#else
+	pageSize = IFLASH_PAGE_SIZE;
+#endif
 
 #ifdef IAP_VIA_SPI
 	memset(writeData, 0x1A, blockReadSize);
@@ -553,11 +562,7 @@ void openBinary() noexcept
 		Reset(false);
 	}
 
-#ifdef IAP_IN_RAM
-	const size_t maxFirmwareSize = IFLASH_SIZE;
-#else
-	const size_t maxFirmwareSize = IFLASH_SIZE - iapFirmwareSize;
-#endif
+	const size_t maxFirmwareSize = FirmwareFlashEnd - FirmwareFlashStart;
 	if (info.fsize > maxFirmwareSize)
 	{
 		MessageF("ERROR: File %s is too big", fwFile);
@@ -581,7 +586,7 @@ void openBinary() noexcept
 
 void ShowProgress() noexcept
 {
-	const size_t percentDone = (100 * (flashPos - IFLASH_ADDR))/(firmwareFlashEnd - IFLASH_ADDR);
+	const size_t percentDone = (100 * (flashPos - FirmwareFlashStart))/(FirmwareFlashEnd - FirmwareFlashStart);
 	if (percentDone >= reportNextPercent)
 	{
 		MessageF("Flashing firmware, %u%% completed", percentDone);
@@ -611,26 +616,32 @@ void writeBinary()
 		// no break
 	case UnlockingFlash:
 		// Unlock each single page
-		debugPrintf("Unlocking 0x%08x - 0x%08x\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
+		debugPrintf("Unlocking 0x%08x - 0x%08x\n", flashPos, flashPos + pageSize - 1);
 
-		cpu_irq_disable();
-		if (flash_unlock(flashPos, flashPos + IFLASH_PAGE_SIZE - 1, nullptr, nullptr) == FLASH_RC_OK)
 		{
-			flashPos += IFLASH_PAGE_SIZE;
-			retry = 0;
-		}
-		else
-		{
-			retry++;
+#if SAME5x
+			const bool ok = Flash::Unlock(flashPos, pageSize);
+#else
+			cpu_irq_disable();
+			const bool ok = (flash_unlock(flashPos, flashPos + pageSize - 1, nullptr, nullptr) == FLASH_RC_OK);
 			cpu_irq_enable();
-			break;
+#endif
+			if (ok)
+			{
+				flashPos += pageSize;
+				retry = 0;
+			}
+			else
+			{
+				retry++;
+				break;
+			}
 		}
-		cpu_irq_enable();
 
 		// Make sure we stay within FW Flash area
-		if (flashPos >= firmwareFlashEnd)
+		if (flashPos >= FirmwareFlashEnd)
 		{
-			flashPos = IFLASH_ADDR;
+			flashPos = FirmwareFlashStart;
 #if SAM4E || SAM4S || SAME70 || SAME5x
 			MessageF("Erasing flash");
 			state = ErasingFlash;
@@ -652,22 +663,25 @@ void writeBinary()
 		{
 			const uint32_t sectorSize =
 # if SAME5x
-				qq;
-# elif SAM4E || SAM4S
+				pageSize;
+			if (Flash::Erase(flashPos, sectorSize))
+#else
+# if SAM4E || SAM4S
 				// Deal with varying size sectors on the SAM4E and SAM4S
 				// There are two 8K sectors, then one 48K sector, then seven 64K sectors
 				(flashPos - IFLASH_ADDR < 16 * 1024) ? 8 * 1024
 					: (flashPos - IFLASH_ADDR == 16 * 1024) ? 48 * 1024
 						: 64 * 1024;
-#elif SAME70
+# elif SAME70
 				// Deal with varying size sectors on the SAME70
 				// There are two 8K sectors, then one 112K sector, then the rest are 128K sectors
 				(flashPos - IFLASH_ADDR < 16 * 1024) ? 8 * 1024
 					: (flashPos - IFLASH_ADDR == 16 * 1024) ? 112 * 1024
 						: 128 * 1024;
-#endif
+# endif
 
 			if (flash_erase_sector(flashPos) == FLASH_RC_OK)
+#endif
 			{
 				// Check that the sector really is erased
 				for (uint32_t p = flashPos; p < flashPos + sectorSize; p += sizeof(uint32_t))
@@ -685,9 +699,9 @@ void writeBinary()
 			{
 				++retry;
 			}
-			if (flashPos >= firmwareFlashEnd)
+			if (flashPos >= FirmwareFlashEnd)
 			{
-				flashPos = IFLASH_ADDR;
+				flashPos = FirmwareFlashStart;
 				haveDataInBuffer = false;
 #ifdef IAP_VIA_SPI
 				transferPending = false;
@@ -710,7 +724,7 @@ void writeBinary()
 					// Got another flash block to write. The block size is fixed
 					bytesRead = blockReadSize;
 				}
-				else if (flashPos != IFLASH_ADDR && millis() - transferStartTime > TransferCompleteDelay)
+				else if (flashPos != FirmwareFlashStart && millis() - transferStartTime > TransferCompleteDelay)
 				{
 					// If anything could be written before, check for the delay indicating the flashing process has finished
 					bytesRead = 0;
@@ -742,7 +756,7 @@ void writeBinary()
 			}
 
 			// Seek to the correct place in case we are doing retries
-			FRESULT result = f_lseek(&upgradeBinary, flashPos - IFLASH_ADDR);
+			FRESULT result = f_lseek(&upgradeBinary, flashPos - FirmwareFlashStart);
 			if (result != FR_OK)
 			{
 				debugPrintf("WARNING: f_lseek returned err %d\n", result);
@@ -778,32 +792,36 @@ void writeBinary()
 
 		// Write another page
 		{
-			debugPrintf("Writing 0x%08x - 0x%08x\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
+			debugPrintf("Writing 0x%08x - 0x%08x\n", flashPos, flashPos + pageSize - 1);
 			if (retry != 0)
 			{
 				MessageF("Flash write retry #%u", retry);
 			}
 
-			cpu_irq_disable();
-			const uint32_t rc =
-#if SAM4E || SAM4S || SAME70
-								flash_write(flashPos, readData + bytesWritten, IFLASH_PAGE_SIZE, 0);
+#if SAME5x
+			const bool ok = Flash::Write(flashPos, pageSize, (uint8_t*)readData + bytesWritten);
 #else
-								flash_write(flashPos, readData + bytesWritten, IFLASH_PAGE_SIZE, 1);
-#endif
+			cpu_irq_disable();
+			const bool ok =
+# if SAM4E || SAM4S || SAME70
+								flash_write(flashPos, readData + bytesWritten, pageSize, 0) == FLASH_RC_OK;
+# else
+								flash_write(flashPos, readData + bytesWritten, pageSize, 1) == FLASH_RC_OK;
+# endif
 			cpu_irq_enable();
-			if (rc != FLASH_RC_OK)
+#endif
+			if (!ok)
 			{
 				retry++;
 				break;
 			}
 
 			// Verify the written data
-			if (memcmp(readData + bytesWritten, reinterpret_cast<const void *>(flashPos), IFLASH_PAGE_SIZE) == 0)
+			if (memcmp(readData + bytesWritten, reinterpret_cast<const void *>(flashPos), pageSize) == 0)
 			{
 				retry = 0;
-				bytesWritten += IFLASH_PAGE_SIZE;
-				flashPos += IFLASH_PAGE_SIZE;
+				bytesWritten += pageSize;
+				flashPos += pageSize;
 				ShowProgress();
 				if (bytesWritten == blockReadSize)
 				{
@@ -837,7 +855,7 @@ void writeBinary()
 		else if (is_spi_transfer_complete())
 		{
 			const FlashVerifyRequest *request = reinterpret_cast<const FlashVerifyRequest*>(readData);
-			uint16_t crc16 = CRC16(reinterpret_cast<const char*>(IFLASH_ADDR), request->firmwareLength);
+			uint16_t crc16 = CRC16(reinterpret_cast<const char*>(FirmwareFlashStart), request->firmwareLength);
 			if (request->crc16 == crc16)
 			{
 				// Success!
@@ -884,7 +902,7 @@ void writeBinary()
 		else if (is_spi_transfer_complete())
 		{
 			// Attempt to flash the firmware again
-			flashPos = IFLASH_ADDR;
+			flashPos = FirmwareFlashStart;
 			state = WritingUpgrade;
 			retry = 0;
 		}
@@ -894,15 +912,19 @@ void writeBinary()
 	case LockingFlash:
 		// Lock each single page again
 		{
-			debugPrintf("Locking 0x%08x - 0x%08x\n", flashPos, flashPos + IFLASH_PAGE_SIZE - 1);
+			debugPrintf("Locking 0x%08x - 0x%08x\n", flashPos, flashPos + pageSize - 1);
 
+#if SAME5x
+			const bool ok = Flash::Lock(flashPos, pageSize);
+#else
 			cpu_irq_disable();
-			const uint32_t rc = flash_lock(flashPos, flashPos + IFLASH_PAGE_SIZE - 1, nullptr, nullptr);
+			const bool ok = (flash_lock(flashPos, flashPos + pageSize - 1, nullptr, nullptr) == FLASH_RC_OK);
 			cpu_irq_enable();
-			if (rc == FLASH_RC_OK)
+#endif
+			if (ok)
 			{
-				flashPos += IFLASH_PAGE_SIZE;
-				if (flashPos >= firmwareFlashEnd)
+				flashPos += pageSize;
+				if (flashPos >= FirmwareFlashEnd)
 				{
 					MessageF("Update successful! Rebooting...");
 					debugPrintf("Upgrade successful! Rebooting...\n");
@@ -932,20 +954,20 @@ void Reset(bool success) noexcept
 	// Only start from bootloader if the firmware couldn't be written entirely
 	if (!success && state >= WritingUpgrade)
 	{
-		cpu_irq_disable();
-
 		// If anything went wrong, write the last error message to Flash to the beginning
 		// of the Flash memory. That may help finding out what went wrong...
-		flash_unlock(IFLASH_ADDR, IFLASH_ADDR + 64, nullptr, nullptr);
-		flash_write(IFLASH_ADDR, formatBuffer, strlen(formatBuffer), 1);
-		// no reason to lock it again
-
-#if !SAME5x
+#if SAME5x
+		Flash::Unlock(FirmwareFlashStart, pageSize);
+		Flash::Write(FirmwareFlashStart, strlen(formatBuffer), (uint8_t*)formatBuffer);
+#else
+		cpu_irq_disable();
+		flash_unlock(FirmwareFlashStart, FirmwareFlashStart + pageSize, nullptr, nullptr);
+		flash_write(FirmwareFlashStart, formatBuffer, strlen(formatBuffer), 1);
 		// Start from bootloader next time
 		flash_clear_gpnvm(1);
-#endif
-
 		cpu_irq_enable();
+#endif
+		// no reason to lock it again
 	}
 
 #ifdef IAP_VIA_SPI
@@ -954,9 +976,7 @@ void Reset(bool success) noexcept
 
 	delay_ms(500);							// allow last message to PanelDue to go
 
-#if SAM4E || SAM4S || SAME70
-	digitalWrite(DiagLedPin, false);		// turn the LED off
-#endif
+	digitalWrite(DiagLedPin, !LedOnPolarity);		// turn the LED off
 
 	// Reboot
 	Reset();

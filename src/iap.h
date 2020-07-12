@@ -17,9 +17,6 @@
 
 #if SAME5x
 # include <CoreIO.h>
-# define IFLASH_ADDR		(FLASH_ADDR)
-# define IFLASH_SIZE		(FLASH_SIZE)
-# define IFLASH_PAGE_SIZE	(FLASH_PAGE_SIZE)
 #elif SAM4S
 # define IFLASH_ADDR		(IFLASH0_ADDR)
 # define IFLASH_PAGE_SIZE	(IFLASH0_PAGE_SIZE)
@@ -30,7 +27,7 @@
 // IFLASH_ADDR and IFLASH_PAGE_SIZE are already defined for the SAM4E and the SAME70
 #endif
 
-const size_t baudRate = 115200;						// For USB diagnostics
+const uint32_t UsbBaudRate = 115200;						// For USB diagnostics
 
 #if SAM3XA
 # ifdef __RADDS__
@@ -39,6 +36,7 @@ const size_t NumSdCards = 2;
 const Pin SdCardDetectPins[NumSdCards] = { 14, 14 };
 const Pin SdWriteProtectPins[NumSdCards] = { NoPin, NoPin };
 const Pin SdSpiCSPins[2] = { 87, 77 };
+const Pin DiagLedPin = NoPin;
 const char * const defaultFwFile = "0:/sys/RepRapFirmware-RADDS.bin";	// Which file shall be used for IAP?
 const char * const fwFilePrefix = "0:/sys/RepRap";
 # elif defined(__ALLIGATOR__)
@@ -47,6 +45,7 @@ const size_t NumSdCards = 1;
 const Pin SdCardDetectPins[NumSdCards] = { 87 };
 const Pin SdWriteProtectPins[NumSdCards] = { NoPin };
 const Pin SdSpiCSPins[2] = { 77 };
+const Pin DiagLedPin = NoPin;
 const char * const defaultFwFile = "0:/sys/RepRapFirmware-Alligator.bin";	// Which file shall be used for IAP?
 const char * const fwFilePrefix = "0:/sys/RepRap";
 # else	// Duet 06/085
@@ -55,6 +54,7 @@ const size_t NumSdCards = 2;
 const Pin SdCardDetectPins[NumSdCards] = {NoPin, NoPin};				// Don't use the Card Detect pin on the Duet 085
 const Pin SdWriteProtectPins[NumSdCards] = {NoPin, NoPin};
 const Pin SdSpiCSPins[1] = {67};
+const Pin DiagLedPin = NoPin;
 const char * const defaultFwFile = "0:/sys/RepRapFirmware.bin";			// Which file shall be used for IAP?
 const char * const fwFilePrefix = "0:/sys/RepRap";
 # endif
@@ -65,6 +65,8 @@ const char * const fwFilePrefix = "0:/sys/RepRap";
 # define USE_XDMAC 0
 # define SERIAL_AUX_DEVICE Serial
 constexpr Pin DiagLedPin = PortCPin(2);
+constexpr bool LedOnPolarity = true;
+
 # ifndef IAP_VIA_SPI
 const size_t NumSdCards = 2;
 const Pin SdCardDetectPins[NumSdCards] = {53, NoPin};
@@ -101,6 +103,8 @@ const Pin SdCardDetectPins[NumSdCards] = {44, NoPin};
 const Pin SdWriteProtectPins[NumSdCards] = {NoPin, NoPin};
 const Pin SdSpiCSPins[1] = {56};
 const Pin DiagLedPin = 62;
+constexpr bool LedOnPolarity = true;
+
 const char * const defaultFwFile = "0:/sys/DuetMaestroFirmware.bin";	// Which file shall we default to used for IAP?
 const char * const fwFilePrefix = "0:/sys/Duet";
 #endif
@@ -111,6 +115,7 @@ const char * const fwFilePrefix = "0:/sys/Duet";
 # define SERIAL_AUX_DEVICE Serial
 const size_t NumSdCards = 2;
 const Pin DiagLedPin = PortCPin(20);
+constexpr bool LedOnPolarity = true;
 
 # if defined(IAP_VIA_SPI)
 
@@ -163,6 +168,7 @@ constexpr GpioPinFunction Serial0PinFunction = GpioPinFunction::D;
 
 const size_t NumSdCards = 1;
 const Pin DiagLedPin = PortAPin(31);
+constexpr bool LedOnPolarity = false;
 
 # if defined(IAP_VIA_SPI)
 
@@ -187,7 +193,7 @@ constexpr Pin SbcTfrReadyPin = PortBPin(7);
 
 # else
 
-const char * const defaultFwFile = "0:/sys/Duet3Firmware_Mini5plus.bin";			// Which file shall we default to used for IAP?
+const char * const defaultFwFile = "0:/sys/Duet3Firmware_Mini5plus.bin";	// which file shall we default to used for IAP?
 const char * const fwFilePrefix = "0:/sys/Duet3";
 
 const Pin SdCardDetectPins[NumSdCards] = { PortBPin(16) };
@@ -198,14 +204,25 @@ const Pin SdSpiCSPins[1] = { NoPin };
 #endif	// SAME70
 
 #ifdef IAP_IN_RAM
-const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE;
+
+# if SAME5x
+const uint32_t BootloaderSize = 0x4000;									// we have a 16K USB bootloader
+const uint32_t FirmwareFlashStart = FLASH_ADDR + BootloaderSize;
+const uint32_t FirmwareFlashEnd = FLASH_ADDR + FLASH_SIZE;
+# else
+const uint32_t FirmwareFlashStart = IFLASH_ADDR;
+const uint32_t FirmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE;
+# endif
+
 #else
+
 # if SAME70
 const uint32_t iapFirmwareSize = 0x20000;								// 128 KiB max (SAME70 has 128kb flash sectors so we can't erase a smaller amount)
 # else
 const uint32_t iapFirmwareSize = 0x10000;								// 64 KiB max
 # endif
-const uint32_t firmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE - iapFirmwareSize;
+const uint32_t FirmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE - iapFirmwareSize;
+
 #endif
 
 #ifdef IAP_VIA_SPI
