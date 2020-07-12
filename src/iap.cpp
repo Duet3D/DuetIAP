@@ -131,7 +131,7 @@ extern "C" void AppMain() noexcept
 {
 #if SAME5x
 	// Initialise systick (needed for delay calls)
-	SysTick->LOAD = ((SystemCoreClock/1000) - 1) << SysTick_LOAD_RELOAD_Pos;
+	SysTick->LOAD = ((SystemCoreClockFreq/1000) - 1) << SysTick_LOAD_RELOAD_Pos;
 	SysTick->CTRL = (1 << SysTick_CTRL_ENABLE_Pos) | (1 << SysTick_CTRL_TICKINT_Pos) | (1 << SysTick_CTRL_CLKSOURCE_Pos);
 #else
 	SysTickInit();
@@ -615,17 +615,27 @@ void writeBinary()
 		state = UnlockingFlash;
 		// no break
 	case UnlockingFlash:
-		// Unlock each single page
-		debugPrintf("Unlocking 0x%08x - 0x%08x\n", flashPos, flashPos + pageSize - 1);
-
 		{
-#if SAME5x
-			const bool ok = Flash::Unlock(flashPos, pageSize);
-#else
+			debugPrintf("Unlocking 0x%08x - 0x%08x\n", flashPos, flashPos + pageSize - 1);
+
+# if SAME5x
+			// We can unlock all the flash in one call. We may have to unlock from before the firmware start.
+			const uint32_t unlockStart = FirmwareFlashStart & ~(Flash::GetLockRegionSize() - 1);
+			if (Flash::Unlock(unlockStart, FirmwareFlashEnd - unlockStart))
+			{
+				flashPos = FirmwareFlashStart;
+				MessageF("Erasing flash");
+				state = ErasingFlash;
+			}
+			else
+			{
+				++retry;
+			}
+# else
+			// Unlock each single page
 			cpu_irq_disable();
 			const bool ok = (flash_unlock(flashPos, flashPos + pageSize - 1, nullptr, nullptr) == FLASH_RC_OK);
 			cpu_irq_enable();
-#endif
 			if (ok)
 			{
 				flashPos += pageSize;
@@ -636,18 +646,19 @@ void writeBinary()
 				retry++;
 				break;
 			}
-		}
 
-		// Make sure we stay within FW Flash area
-		if (flashPos >= FirmwareFlashEnd)
-		{
-			flashPos = FirmwareFlashStart;
-#if SAM4E || SAM4S || SAME70 || SAME5x
-			MessageF("Erasing flash");
-			state = ErasingFlash;
-#else
-			bytesWritten = blockReadSize;
-			state = WritingUpgrade;
+			// Make sure we stay within FW Flash area
+			if (flashPos >= FirmwareFlashEnd)
+			{
+				flashPos = FirmwareFlashStart;
+# if SAM4E || SAM4S || SAME70 || SAME5x
+				MessageF("Erasing flash");
+				state = ErasingFlash;
+# else
+				bytesWritten = blockReadSize;
+				state = WritingUpgrade;
+# endif
+			}
 #endif
 		}
 		break;
@@ -663,7 +674,9 @@ void writeBinary()
 		{
 			const uint32_t sectorSize =
 # if SAME5x
-				pageSize;
+				// For efficiency, we should erase at least a whole row (4 x 512b pages) at a time.
+				// Interrupts are disabled while erasing, so don't erase too much at once.
+				4 * pageSize;
 			if (Flash::Erase(flashPos, sectorSize))
 #else
 # if SAM4E || SAM4S
@@ -699,6 +712,7 @@ void writeBinary()
 			{
 				++retry;
 			}
+
 			if (flashPos >= FirmwareFlashEnd)
 			{
 				flashPos = FirmwareFlashStart;
@@ -914,13 +928,23 @@ void writeBinary()
 		{
 			debugPrintf("Locking 0x%08x - 0x%08x\n", flashPos, flashPos + pageSize - 1);
 
-#if SAME5x
-			const bool ok = Flash::Lock(flashPos, pageSize);
-#else
+# if SAME5x
+			// We can lock all the flash in one call. We may have to unlock from before the firmware start.
+			const uint32_t lockStart = FirmwareFlashStart & ~(Flash::GetLockRegionSize() - 1);
+			if (Flash::Lock(lockStart, FirmwareFlashEnd - lockStart))
+			{
+				MessageF("Update successful! Rebooting...");
+				debugPrintf("Upgrade successful! Rebooting...\n");
+				Reset(true);
+			}
+			else
+			{
+				++retry;
+			}
+# else
 			cpu_irq_disable();
 			const bool ok = (flash_lock(flashPos, flashPos + pageSize - 1, nullptr, nullptr) == FLASH_RC_OK);
 			cpu_irq_enable();
-#endif
 			if (ok)
 			{
 				flashPos += pageSize;
@@ -936,6 +960,7 @@ void writeBinary()
 			{
 				retry++;
 			}
+#endif
 		}
 		break;
 	}
