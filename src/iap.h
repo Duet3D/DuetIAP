@@ -208,7 +208,7 @@ const Pin SdSpiCSPins[1] = { NoPin };
 # if SAME5x
 const uint32_t BootloaderSize = 0x4000;									// we have a 16K USB bootloader
 const uint32_t FirmwareFlashStart = FLASH_ADDR + BootloaderSize;
-const uint32_t FirmwareFlashEnd = FLASH_ADDR + FLASH_SIZE;
+const uint32_t FirmwareFlashEnd = FLASH_ADDR + FLASH_SIZE - (16 * 1024);	// allow 16K for SMART EEPROM
 # else
 const uint32_t FirmwareFlashStart = IFLASH_ADDR;
 const uint32_t FirmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE;

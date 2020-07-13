@@ -76,6 +76,10 @@ ProcessState state = Initializing;
 uint32_t pageSize;
 uint32_t flashPos = FirmwareFlashStart;
 
+#ifndef IAP_VIA_SPI
+uint32_t firmwareFileSize;
+#endif
+
 size_t retry = 0;
 size_t bytesRead, bytesWritten;
 bool haveDataInBuffer;
@@ -570,6 +574,8 @@ void openBinary() noexcept
 		Reset(false);
 	}
 
+	firmwareFileSize = info.fsize;
+
 	// Try to open the file
 	if (f_open(&upgradeBinary, fwFile, FA_OPEN_EXISTING | FA_READ) != FR_OK)
 	{
@@ -586,12 +592,31 @@ void openBinary() noexcept
 
 void ShowProgress() noexcept
 {
-	const size_t percentDone = (100 * (flashPos - FirmwareFlashStart))/(FirmwareFlashEnd - FirmwareFlashStart);
+#ifdef IAP_VIA_SPI
+	const uint32_t totalSize = FirmwareFlashEnd - FirmwareFlashStart;		//TODO is there a way of knowing the total file size?
+#else
+	const uint32_t totalSize = firmwareFileSize;
+#endif
+	const size_t percentDone = (100 * (flashPos - FirmwareFlashStart))/totalSize;
 	if (percentDone >= reportNextPercent)
 	{
 		MessageF("Flashing firmware, %u%% completed", percentDone);
 		reportNextPercent += reportPercentIncrement;
 	}
+}
+
+// Check whether an areas of flash is erased
+bool IsSectorErased(uint32_t addr, uint32_t sectorSize)
+{
+	// Check that the sector really is erased
+	for (uint32_t p = addr; p < addr + sectorSize; p += sizeof(uint32_t))
+	{
+		if (*reinterpret_cast<const uint32_t*>(p) != 0xFFFFFFFF)
+		{
+			return false;
+		}
+	}
+	return true;
 }
 
 // This implements the actual functionality of this program
@@ -619,7 +644,7 @@ void writeBinary()
 			debugPrintf("Unlocking 0x%08x - 0x%08x\n", flashPos, flashPos + pageSize - 1);
 
 # if SAME5x
-			// We can unlock all the flash in one call. We may have to unlock from before the firmware start.
+			// We can unlock all the flash in one call. We may have to unlock from before the firmware start. The bootloader is protected separately.
 			const uint32_t unlockStart = FirmwareFlashStart & ~(Flash::GetLockRegionSize() - 1);
 			if (Flash::Unlock(unlockStart, FirmwareFlashEnd - unlockStart))
 			{
@@ -672,41 +697,40 @@ void writeBinary()
 		}
 
 		{
-			const uint32_t sectorSize =
 # if SAME5x
-				// For efficiency, we should erase at least a whole row (4 x 512b pages) at a time.
-				// Interrupts are disabled while erasing, so don't erase too much at once.
-				4 * pageSize;
-			if (Flash::Erase(flashPos, sectorSize))
+			const uint32_t sectorSize = Flash::GetEraseRegionSize();
+			// No need to erase a sector that is already erased
+			if (IsSectorErased(flashPos, sectorSize) || Flash::Erase(flashPos, sectorSize))
 #else
 # if SAM4E || SAM4S
+			const uint32_t sectorSize =
 				// Deal with varying size sectors on the SAM4E and SAM4S
 				// There are two 8K sectors, then one 48K sector, then seven 64K sectors
 				(flashPos - IFLASH_ADDR < 16 * 1024) ? 8 * 1024
 					: (flashPos - IFLASH_ADDR == 16 * 1024) ? 48 * 1024
 						: 64 * 1024;
 # elif SAME70
+			const uint32_t sectorSize =
 				// Deal with varying size sectors on the SAME70
 				// There are two 8K sectors, then one 112K sector, then the rest are 128K sectors
 				(flashPos - IFLASH_ADDR < 16 * 1024) ? 8 * 1024
 					: (flashPos - IFLASH_ADDR == 16 * 1024) ? 112 * 1024
 						: 128 * 1024;
 # endif
-
-			if (flash_erase_sector(flashPos) == FLASH_RC_OK)
+			// No need to erase a sector that is already erased
+			if (IsSectorErased(flashPos, sectorSize) || flash_erase_sector(flashPos) == FLASH_RC_OK)
 #endif
 			{
 				// Check that the sector really is erased
-				for (uint32_t p = flashPos; p < flashPos + sectorSize; p += sizeof(uint32_t))
+				if (IsSectorErased(flashPos, sectorSize))
 				{
-					if (*reinterpret_cast<const uint32_t*>(p) != 0xFFFFFFFF)
-					{
-						++retry;
-						break;
-					}
+					retry = 0;
+					flashPos += sectorSize;
 				}
-				retry = 0;
-				flashPos += sectorSize;
+				else
+				{
+					++retry;
+				}
 			}
 			else
 			{
@@ -720,6 +744,7 @@ void writeBinary()
 #ifdef IAP_VIA_SPI
 				transferPending = false;
 #endif
+				MessageF("Writing data");
 				state = WritingUpgrade;
 			}
 		}
