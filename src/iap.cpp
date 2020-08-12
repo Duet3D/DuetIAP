@@ -22,6 +22,7 @@
 #endif
 
 #include <General/SafeVsnprintf.h>
+#include <General/StringFunctions.h>
 
 #ifndef IAP_VIA_SPI
 # include "ff.h"
@@ -66,6 +67,8 @@ uint32_t transferStartTime;
 FATFS fs;
 FIL upgradeBinary;
 const char* fwFile = defaultFwFile;
+uint32_t firmwareFileSize;
+bool isUf2File;
 
 #endif
 
@@ -74,10 +77,6 @@ alignas(4) char readData[blockReadSize];	// use aligned memory so DMA works well
 ProcessState state = Initializing;
 uint32_t pageSize;
 uint32_t flashPos = FirmwareFlashStart;
-
-#ifndef IAP_VIA_SPI
-uint32_t firmwareFileSize;
-#endif
 
 size_t retry = 0;
 size_t bytesRead, bytesWritten;
@@ -108,8 +107,13 @@ void delay_ms(uint32_t ms) noexcept
 	} while (millis() - startTime < ms);
 }
 
-void debugPrintf(const char *fmt, ...) noexcept;		// forward declaration
 void MessageF(const char *fmt, ...) noexcept;			// forward declaration
+
+#if defined(DEBUG) && DEBUG
+# define debugPrintf(...)		do { MessageF(__VA_ARGS__); delay_ms(1000); } while (false)
+#else
+# define debugPrintf(...)		do { } while (false)
+#endif
 
 extern "C" void UrgentInit() noexcept { }
 
@@ -186,16 +190,11 @@ extern "C" void AppMain() noexcept
 	SERIAL_AUX_DEVICE.begin(57600);				// set serial port to default PanelDue baud rate
 	MessageF("IAP started");
 
-	debugPrintf("IAP Utility for Duet electronics\n");
-	debugPrintf("Developed by Christian Hammacher (2016-2019)\n");
-	debugPrintf("Licensed under the terms of the GPLv2\n\n");
-
 #if SAME5x
 	if (!Flash::Init())
 	{
 		MessageF("Failed to initialize flash controller");
-		debugPrintf("Failed to initialize flash controller\n");
-		Reset();
+		Reset(false);
 	}
 
 	pageSize = Flash::GetPageSize();
@@ -469,7 +468,7 @@ uint16_t CRC16(const char *buffer, size_t length) noexcept
 
 void initFilesystem() noexcept
 {
-	debugPrintf("Initialising SD card... ");
+	debugPrintf("Initialising SD card");
 
 	memset(&fs, 0, sizeof(FATFS));
 	sd_mmc_init(SdWriteProtectPins, SdSpiCSPins);
@@ -489,40 +488,31 @@ void initFilesystem() noexcept
 	if (err == SD_MMC_OK)
 	{
 		MessageF("SD card initialised OK");
-		debugPrintf("Done\n");
 	}
 	else
 	{
-		debugPrintf("ERROR: ");
 		switch (err)
 		{
 			case SD_MMC_ERR_NO_CARD:
 				MessageF("SD card not found");
-				debugPrintf("Card not found\n");
 				break;
 			case SD_MMC_ERR_UNUSABLE:
 				MessageF("SD card is unusable, try another one");
-				debugPrintf("Card is unusable, try another one\n");
 				break;
 			case SD_MMC_ERR_SLOT:
 				MessageF("SD slot unknown");
-				debugPrintf("Slot unknown\n");
 				break;
 			case SD_MMC_ERR_COMM:
 				MessageF("SD card communication error");
-				debugPrintf("General communication error\n");
 				break;
 			case SD_MMC_ERR_PARAM:
 				MessageF("SD interface illegal input parameter");
-				debugPrintf("Illegal input parameter\n");
 				break;
 			case SD_MMC_ERR_WP:
 				MessageF("SD card write protected");
-				debugPrintf("Card write protected\n");
 				break;
 			default:
 				MessageF("SD interface unknown error, code %d", err);
-				debugPrintf("Unknown (code %d)\n", err);
 				break;
 		}
 		Reset(false);
@@ -533,7 +523,6 @@ void initFilesystem() noexcept
 	if (mounted != FR_OK)
 	{
 		MessageF("SD card mount failed, code %d", mounted);
-		debugPrintf("Mount failed, code %d\n", mounted);
 		Reset(false);
 	}
 }
@@ -554,12 +543,13 @@ void getFirmwareFileName() noexcept
 		}
 	}
 	fwFile = fwFilePtr;		// replace default filename by the one we were passed
+	isUf2File = StringEndsWithIgnoreCase(fwFile, ".uf2");
 }
 
 // Open the upgrade binary file so we can use it for flashing
 void openBinary() noexcept
 {
-	debugPrintf("Opening firmware binary... ");
+	debugPrintf("Opening firmware binary");
 
 	// Check if this file doesn't exceed our boundaries
 	FILINFO info;
@@ -567,15 +557,17 @@ void openBinary() noexcept
 	if (f_stat(fwFile, &info) != FR_OK)
 	{
 		MessageF("ERROR: Could not find file %s", fwFile);
-		debugPrintf("ERROR: Could not find upgrade file!\n");
 		Reset(false);
 	}
 
-	const size_t maxFirmwareSize = FirmwareFlashEnd - FirmwareFlashStart;
-	if (info.fsize > maxFirmwareSize)
+	size_t maxFirmwareFileSize = FirmwareFlashEnd - FirmwareFlashStart;
+	if (isUf2File)
+	{
+		maxFirmwareFileSize *= 2;
+	}
+	if (info.fsize > maxFirmwareFileSize)
 	{
 		MessageF("ERROR: File %s is too big", fwFile);
-		debugPrintf("ERROR: The upgrade file is too big!\n");
 		Reset(false);
 	}
 
@@ -585,12 +577,10 @@ void openBinary() noexcept
 	if (f_open(&upgradeBinary, fwFile, FA_OPEN_EXISTING | FA_READ) != FR_OK)
 	{
 		MessageF("ERROR: Could not open file %s", fwFile);
-		debugPrintf("ERROR: Could not open upgrade file!\n");
 		Reset(false);
 	}
 
 	MessageF("File %s opened", fwFile);
-	debugPrintf("Done\n");
 }
 
 #endif
@@ -600,7 +590,7 @@ void ShowProgress() noexcept
 #ifdef IAP_VIA_SPI
 	const uint32_t totalSize = FirmwareFlashEnd - FirmwareFlashStart;		//TODO is there a way of knowing the total file size?
 #else
-	const uint32_t totalSize = firmwareFileSize;
+	const uint32_t totalSize = (isUf2File) ? firmwareFileSize/2 : firmwareFileSize;
 #endif
 	const size_t percentDone = (100 * (flashPos - FirmwareFlashStart))/totalSize;
 	if (percentDone >= reportNextPercent)
@@ -649,7 +639,6 @@ bool ReadBlock()
 		else if (millis() - transferStartTime > TransferTimeout)
 		{
 			// Timeout while waiting for new data
-			debugPrintf("ERROR: Timeout while waiting for response\n");
 			MessageF("ERROR: Timeout while waiting for response");
 			Reset(false);
 		}
@@ -662,48 +651,112 @@ bool ReadBlock()
 	return false;
 }
 
-#elif defined(UF2_FORMAT)
-
-// Read a block of data into the buffer.
-// If successful, return true with bytesRead being the amount of data read (may be zero).
-bool ReadBlock()
-{
-	struct UF2_Block
-	{
-	    // 32 byte header
-	    uint32_t magicStart0;
-	    uint32_t magicStart1;
-	    uint32_t flags;
-	    uint32_t targetAddr;
-	    uint32_t payloadSize;
-	    uint32_t blockNo;
-	    uint32_t numBlocks;
-	    uint32_t fileSize; // or familyID;
-	    uint8_t data[476];
-	    uint32_t magicEnd;
-	};
-	static UF2_Block uf2Buffer;
-
-	qq;
-}
-
 #else
 
+struct UF2_Block
+{
+	// 32 byte header
+	uint32_t magicStart0;
+	uint32_t magicStart1;
+	uint32_t flags;
+	uint32_t targetAddr;
+	uint32_t payloadSize;
+	uint32_t blockNo;
+	uint32_t numBlocks;
+	uint32_t fileSize;		// or familyID
+	uint8_t data[476];
+	uint32_t magicEnd;
+
+	static constexpr uint32_t MagicStart0Val = 0x0A324655;
+	static constexpr uint32_t MagicStart1Val = 0x9E5D5157;
+	static constexpr uint32_t MagicEndVal = 0x0AB16F30;
+};
+
+// Read a block of data into the buffer, when the file is a .uf2 file
+// We rely on Duet .uf2 files always being sequential and having 256 bytes of data per 512 byte block
+bool ReadBlockUf2()
+{
+	static UF2_Block uf2Buffer;
+
+	// Seek to the correct place in case we are doing retries
+	const uint32_t seekPos = (flashPos - FirmwareFlashStart) * 2;
+	FRESULT result = f_lseek(&upgradeBinary, seekPos);
+	if (result != FR_OK)
+	{
+		debugPrintf("WARNING: f_lseek returned err %d", result);
+		delay_ms(100);
+		retry++;
+		return false;
+	}
+
+	bytesRead = 0;
+	do
+	{
+		if (seekPos + (bytesRead * 2) == firmwareFileSize)
+		{
+			// Now we just need to fill up the remaining part of the buffer with 0xFF
+			memset(readData + bytesRead, 0xFF, blockReadSize - bytesRead);
+			return true;
+		}
+
+		size_t locBytesRead;
+		result = f_read(&upgradeBinary, &uf2Buffer, sizeof(uf2Buffer), &locBytesRead);
+		if (result != FR_OK)
+		{
+			debugPrintf("WARNING: f_read returned err %d", result);
+			delay_ms(100);
+			retry++;
+			return false;
+		}
+		if (locBytesRead != sizeof(uf2Buffer))
+		{
+			//TODO just quit?
+			debugPrintf("WARNING: UF2 block read returned only %u bytes", locBytesRead);
+			delay_ms(100);
+			retry++;
+			return false;
+		}
+		if (uf2Buffer.magicStart0 !=UF2_Block:: MagicStart0Val || uf2Buffer.magicStart1 != UF2_Block::MagicStart1Val || uf2Buffer.magicEnd != UF2_Block::MagicEndVal)
+		{
+			//TODO just quit?
+			MessageF("ERROR: bad UF2 block at offset %" PRIu32, seekPos + bytesRead);
+			Reset(false);
+			return false;
+		}
+		if (uf2Buffer.targetAddr != flashPos + bytesRead || uf2Buffer.payloadSize != 256)
+		{
+			//TODO just quit?
+			MessageF("ERROR: unexpected data in UF2 block at offset %" PRIu32, seekPos + bytesRead);
+			Reset(false);
+			return false;
+		}
+		memcpy(readData + bytesRead, uf2Buffer.data, 256);
+		bytesRead += 256;
+	} while (bytesRead < blockReadSize);
+
+	return true;
+}
+
 // Read a block of data into the buffer.
 // If successful, return true with bytesRead being the amount of data read (may be zero).
 bool ReadBlock()
 {
-	debugPrintf("Reading %u bytes from the file\n", blockReadSize);
+	debugPrintf("Reading %u bytes from the file", blockReadSize);
 	if (retry != 0)
 	{
 		MessageF("Read file retry #%u", retry);
+	}
+
+	if (isUf2File)
+	{
+		return ReadBlockUf2();
 	}
 
 	// Seek to the correct place in case we are doing retries
 	FRESULT result = f_lseek(&upgradeBinary, flashPos - FirmwareFlashStart);
 	if (result != FR_OK)
 	{
-		debugPrintf("WARNING: f_lseek returned err %d\n", result);
+		debugPrintf("WARNING: f_lseek returned err %d", result);
 		delay_ms(100);
 		retry++;
 		return false;
@@ -712,7 +765,7 @@ bool ReadBlock()
 	result = f_read(&upgradeBinary, readData, blockReadSize, &bytesRead);
 	if (result != FR_OK)
 	{
-		debugPrintf("WARNING: f_read returned err %d\n", result);
+		debugPrintf("WARNING: f_read returned err %d", result);
 		delay_ms(100);
 		retry++;
 		return false;
@@ -721,10 +774,7 @@ bool ReadBlock()
 	// Have we finished the file?
 	if (bytesRead < blockReadSize)
 	{
-		// Yes - close it
-		closeBinary();
-
-		// Now we just need to fill up the remaining part of the buffer with 0xFF
+		// Yes, now we just need to fill up the remaining part of the buffer with 0xFF
 		memset(readData + bytesRead, 0xFF, blockReadSize - bytesRead);
 	}
 
@@ -739,12 +789,11 @@ void writeBinary()
 	if (retry > maxRetries)
 	{
 		MessageF("ERROR: Operation %d failed after %d retries", (int)state, maxRetries);
-		debugPrintf("ERROR: Operation %d failed after %d retries!\n", (int)state, maxRetries);
 		Reset(false);
 	}
 	else if (retry > 0)
 	{
-		debugPrintf("WARNING: Retry %d of %d at pos %08x\n", retry, maxRetries, flashPos);
+		debugPrintf("WARNING: Retry %d of %d at pos %08x", retry, maxRetries, flashPos);
 	}
 
 	switch (state)
@@ -755,7 +804,7 @@ void writeBinary()
 		// no break
 	case UnlockingFlash:
 		{
-			debugPrintf("Unlocking 0x%08x - 0x%08x\n", flashPos, flashPos + pageSize - 1);
+			debugPrintf("Unlocking 0x%08x - 0x%08x", flashPos, flashPos + pageSize - 1);
 
 # if SAME5x
 			// We can unlock all the flash in one call. We may have to unlock from before the firmware start. The bootloader is protected separately.
@@ -804,7 +853,7 @@ void writeBinary()
 
 #if SAM4E || SAM4S || SAME70 || SAME5x
 	case ErasingFlash:
-		debugPrintf("Erasing 0x%08x\n", flashPos);
+		debugPrintf("Erasing 0x%08x", flashPos);
 		if (retry != 0)
 		{
 			MessageF("Erase retry #%u", retry);
@@ -880,7 +929,7 @@ void writeBinary()
 
 		// Write another page
 		{
-			debugPrintf("Writing 0x%08x - 0x%08x\n", flashPos, flashPos + pageSize - 1);
+			debugPrintf("Writing 0x%08x - 0x%08x", flashPos, flashPos + pageSize - 1);
 			if (retry != 0)
 			{
 				MessageF("Flash write retry #%u", retry);
@@ -924,6 +973,7 @@ void writeBinary()
 					setup_spi(sizeof(FlashVerifyRequest));
 					state = VerifyingChecksum;
 #else
+					closeBinary();
 					state = LockingFlash;
 #endif
 				}
@@ -935,7 +985,6 @@ void writeBinary()
 	case VerifyingChecksum:
 		if (millis() - transferStartTime > TransferTimeout)
 		{
-			debugPrintf("Timeout while waiting for checksum\n");
 			MessageF("Timeout while waiting for checksum");
 			Reset(false);
 		}
@@ -946,14 +995,13 @@ void writeBinary()
 			if (request->crc16 == crc16)
 			{
 				// Success!
-				debugPrintf("Checksum OK!\n");
+				debugPrintf("Checksum OK!");
 				writeData[0] = 0x0C;
 				state = SendingChecksumOK;
 			}
 			else
 			{
 				// Checksum mismatch
-				debugPrintf("Checksum does not match\n");
 				MessageF("CRC mismatch");
 				writeData[0] = 0xFF;
 				state = SendingChecksumError;
@@ -968,7 +1016,6 @@ void writeBinary()
 		{
 			// Although this is not expected, the firmware has been written successfully so just continue as normal
 			MessageF("Timeout while exchanging checksum acknowledgement");
-			debugPrintf("Timeout while exchanging checksum acknowledgement\n");
 			state = LockingFlash;
 		}
 		else if (is_spi_transfer_complete())
@@ -982,7 +1029,6 @@ void writeBinary()
 		if (millis() - transferStartTime > TransferTimeout)
 		{
 			// Bad image has been flashed - restart to bossa
-			debugPrintf("Timeout while exchanging checksum error\n");
 			MessageF("Timeout while reporting CRC error");
 			Reset(false);
 		}
@@ -999,7 +1045,7 @@ void writeBinary()
 	case LockingFlash:
 		// Lock each single page again
 		{
-			debugPrintf("Locking 0x%08x - 0x%08x\n", flashPos, flashPos + pageSize - 1);
+			debugPrintf("Locking 0x%08x - 0x%08x", flashPos, flashPos + pageSize - 1);
 
 # if SAME5x
 			// We can lock all the flash in one call. We may have to unlock from before the firmware start.
@@ -1007,7 +1053,6 @@ void writeBinary()
 			if (Flash::Lock(lockStart, FirmwareFlashEnd - lockStart))
 			{
 				MessageF("Update successful! Rebooting...");
-				debugPrintf("Upgrade successful! Rebooting...\n");
 				Reset(true);
 			}
 			else
@@ -1024,7 +1069,6 @@ void writeBinary()
 				if (flashPos >= FirmwareFlashEnd)
 				{
 					MessageF("Update successful! Rebooting...");
-					debugPrintf("Upgrade successful! Rebooting...\n");
 					Reset(true);
 				}
 				retry = 0;
@@ -1083,20 +1127,6 @@ void Reset(bool success) noexcept
 	// Reboot
 	Reset();
 	while(true) { }
-}
-
-/** Helper functions **/
-
-void debugPrintf(const char *fmt, ...) noexcept
-{
-	va_list vargs;
-	va_start(vargs, fmt);
-	SafeVsnprintf(formatBuffer, ARRAY_SIZE(formatBuffer), fmt, vargs);
-	va_end(vargs);
-
-#if DEBUG
-	sendUSB(CDC_TX, formatBuffer, strlen(formatBuffer));
-#endif
 }
 
 // Write message to PanelDue

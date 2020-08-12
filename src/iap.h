@@ -193,7 +193,7 @@ constexpr Pin SbcTfrReadyPin = PortBPin(7);
 
 # else
 
-const char * const defaultFwFile = "0:/sys/Duet3Firmware_Mini5plus.bin";	// which file shall we default to used for IAP?
+const char * const defaultFwFile = "0:/sys/Duet3Firmware_Mini5plus.uf2";	// which file shall we default to used for IAP?
 const char * const fwFilePrefix = "0:/sys/Duet3";
 
 const Pin SdCardDetectPins[NumSdCards] = { PortBPin(16) };
