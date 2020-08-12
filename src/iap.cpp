@@ -14,10 +14,9 @@
 #include "iap.h"
 
 #if SAME5x
-# include <Uart.h>
+# include "Devices.h"
 # include <Flash.h>
-extern Uart *serialUart0;
-# define SERIAL_AUX_DEVICE (*serialUart0)
+# define SERIAL_AUX_DEVICE (serialUart0)
 #else
 # include "flash_efc.h"
 #endif
@@ -118,7 +117,7 @@ extern "C" void SysTick_Handler(void) noexcept
 {
 	CoreSysTick();
 #if SAME5x
-	watchdogReset();
+	WatchdogReset();
 #else
 	wdt_restart(WDT);							// kick the watchdog
 #endif
@@ -131,12 +130,18 @@ extern "C" void SysTick_Handler(void) noexcept
 extern "C" void SVC_Handler() noexcept { for (;;) {} }
 extern "C" void PendSV_Handler() noexcept { for (;;) {} }
 
+#if SAME5x		// if using CoreNG
+void AppMain() noexcept
+#else
 extern "C" void AppMain() noexcept
+#endif
 {
 #if SAME5x
-	// Initialise systick (needed for delay calls)
+	DeviceInit();
+	// Initialise systick (needed for delay calls) - CoreNG initialises it in non-interrupt mode
 	SysTick->LOAD = ((SystemCoreClockFreq/1000) - 1) << SysTick_LOAD_RELOAD_Pos;
 	SysTick->CTRL = (1 << SysTick_CTRL_ENABLE_Pos) | (1 << SysTick_CTRL_TICKINT_Pos) | (1 << SysTick_CTRL_CLKSOURCE_Pos);
+	NVIC_SetPriority (SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL); /* set Priority for Systick Interrupt */
 #else
 	SysTickInit();
 #endif
@@ -619,6 +624,115 @@ bool IsSectorErased(uint32_t addr, uint32_t sectorSize)
 	return true;
 }
 
+#ifdef IAP_VIA_SPI
+
+// Read a block of data into the buffer.
+// If successful, return true with bytesRead being the amount of data read (may be zero).
+bool ReadBlock()
+{
+	if (transferPending)
+	{
+		if (is_spi_transfer_complete())
+		{
+			// Got another flash block to write. The block size is fixed
+			bytesRead = blockReadSize;
+			return true;
+		}
+		else if (flashPos != FirmwareFlashStart && millis() - transferStartTime > TransferCompleteDelay)
+		{
+			// If anything could be written before, check for the delay indicating the flashing process has finished
+			bytesRead = 0;
+			disable_spi();
+			memset(readData, 0xFF, blockReadSize);
+			return true;
+		}
+		else if (millis() - transferStartTime > TransferTimeout)
+		{
+			// Timeout while waiting for new data
+			debugPrintf("ERROR: Timeout while waiting for response\n");
+			MessageF("ERROR: Timeout while waiting for response");
+			Reset(false);
+		}
+	}
+	else
+	{
+		// The last block has been written to Flash. Start the next SPI transfer
+		setup_spi(blockReadSize);
+	}
+	return false;
+}
+
+#elif defined(UF2_FORMAT)
+
+// Read a block of data into the buffer.
+// If successful, return true with bytesRead being the amount of data read (may be zero).
+bool ReadBlock()
+{
+	struct UF2_Block
+	{
+	    // 32 byte header
+	    uint32_t magicStart0;
+	    uint32_t magicStart1;
+	    uint32_t flags;
+	    uint32_t targetAddr;
+	    uint32_t payloadSize;
+	    uint32_t blockNo;
+	    uint32_t numBlocks;
+	    uint32_t fileSize; // or familyID;
+	    uint8_t data[476];
+	    uint32_t magicEnd;
+	};
+	static UF2_Block uf2Buffer;
+
+	qq;
+}
+
+#else
+
+// Read a block of data into the buffer.
+// If successful, return true with bytesRead being the amount of data read (may be zero).
+bool ReadBlock()
+{
+	debugPrintf("Reading %u bytes from the file\n", blockReadSize);
+	if (retry != 0)
+	{
+		MessageF("Read file retry #%u", retry);
+	}
+
+	// Seek to the correct place in case we are doing retries
+	FRESULT result = f_lseek(&upgradeBinary, flashPos - FirmwareFlashStart);
+	if (result != FR_OK)
+	{
+		debugPrintf("WARNING: f_lseek returned err %d\n", result);
+		delay_ms(100);
+		retry++;
+		return false;
+	}
+
+	result = f_read(&upgradeBinary, readData, blockReadSize, &bytesRead);
+	if (result != FR_OK)
+	{
+		debugPrintf("WARNING: f_read returned err %d\n", result);
+		delay_ms(100);
+		retry++;
+		return false;
+	}
+
+	// Have we finished the file?
+	if (bytesRead < blockReadSize)
+	{
+		// Yes - close it
+		closeBinary();
+
+		// Now we just need to fill up the remaining part of the buffer with 0xFF
+		memset(readData + bytesRead, 0xFF, blockReadSize - bytesRead);
+	}
+
+	return true;
+}
+
+#endif
+
 // This implements the actual functionality of this program
 void writeBinary()
 {
@@ -752,78 +866,13 @@ void writeBinary()
 #endif
 
 	case WritingUpgrade:
-		// Attempt to read a chunk from the new firmware file or SBC
+		// Attempt to read a chunk from the firmware file or SBC
 		if (!haveDataInBuffer)
 		{
-#ifdef IAP_VIA_SPI
-			if (transferPending)
+			if (!ReadBlock())
 			{
-				if (is_spi_transfer_complete())
-				{
-					// Got another flash block to write. The block size is fixed
-					bytesRead = blockReadSize;
-				}
-				else if (flashPos != FirmwareFlashStart && millis() - transferStartTime > TransferCompleteDelay)
-				{
-					// If anything could be written before, check for the delay indicating the flashing process has finished
-					bytesRead = 0;
-					disable_spi();
-				}
-				else
-				{
-					if (millis() - transferStartTime > TransferTimeout)
-					{
-						// Timeout while waiting for new data
-						debugPrintf("ERROR: Timeout while waiting for response\n");
-						MessageF("ERROR: Timeout while waiting for response");
-						Reset(false);
-					}
-					break;
-				}
-			}
-			else
-			{
-				// The last block has been written to Flash. Start the next SPI transfer
-				setup_spi(blockReadSize);
 				break;
 			}
-#else
-			debugPrintf("Reading %u bytes from the file\n", blockReadSize);
-			if (retry != 0)
-			{
-				MessageF("Read file retry #%u", retry);
-			}
-
-			// Seek to the correct place in case we are doing retries
-			FRESULT result = f_lseek(&upgradeBinary, flashPos - FirmwareFlashStart);
-			if (result != FR_OK)
-			{
-				debugPrintf("WARNING: f_lseek returned err %d\n", result);
-				delay_ms(100);
-				retry++;
-				break;
-			}
-
-			result = f_read(&upgradeBinary, readData, blockReadSize, &bytesRead);
-			if (result != FR_OK)
-			{
-				debugPrintf("WARNING: f_read returned err %d\n", result);
-				delay_ms(100);
-				retry++;
-				break;
-			}
-
-			// Have we finished the file?
-			if (bytesRead < blockReadSize)
-			{
-				// Yes - close it
-				closeBinary();
-
-				// Now we just need to fill up the remaining part of the buffer with 0xFF
-				memset(readData + bytesRead, 0xFF, blockReadSize - bytesRead);
-			}
-#endif
-
 			haveDataInBuffer = true;
 			retry = 0;
 			bytesWritten = 0;
@@ -851,34 +900,33 @@ void writeBinary()
 #endif
 			if (!ok)
 			{
-				retry++;
+				++retry;
 				break;
 			}
 
 			// Verify the written data
-			if (memcmp(readData + bytesWritten, reinterpret_cast<const void *>(flashPos), pageSize) == 0)
+			if (memcmp(readData + bytesWritten, reinterpret_cast<const void *>(flashPos), pageSize) != 0)
 			{
-				retry = 0;
-				bytesWritten += pageSize;
-				flashPos += pageSize;
-				ShowProgress();
-				if (bytesWritten == blockReadSize)
-				{
-					haveDataInBuffer = false;
-					if (bytesRead < blockReadSize)
-					{
-#ifdef IAP_VIA_SPI
-						setup_spi(sizeof(FlashVerifyRequest));
-						state = VerifyingChecksum;
-#else
-						state = LockingFlash;
-#endif
-					}
-				}
+				++retry;
+				break;
 			}
-			else
+
+			retry = 0;
+			bytesWritten += pageSize;
+			flashPos += pageSize;
+			ShowProgress();
+			if (bytesWritten == blockReadSize)
 			{
-				retry++;
+				haveDataInBuffer = false;
+				if (bytesRead < blockReadSize)
+				{
+#ifdef IAP_VIA_SPI
+					setup_spi(sizeof(FlashVerifyRequest));
+					state = VerifyingChecksum;
+#else
+					state = LockingFlash;
+#endif
+				}
 			}
 		}
 		break;
@@ -1001,30 +1049,34 @@ void closeBinary() noexcept
 
 void Reset(bool success) noexcept
 {
-	// Only start from bootloader if the firmware couldn't be written entirely
-	if (!success && state >= WritingUpgrade)
+	if (!success)
 	{
-		// If anything went wrong, write the last error message to Flash to the beginning
-		// of the Flash memory. That may help finding out what went wrong...
+		delay_ms(1500);				// give the user a chance to read the error message on PanelDue
+		// Only start from bootloader if the firmware couldn't be written entirely
+		if (state >= WritingUpgrade)
+		{
+			// If anything went wrong, write the last error message to Flash to the beginning
+			// of the Flash memory. That may help finding out what went wrong...
 #if SAME5x
-		Flash::Unlock(FirmwareFlashStart, pageSize);
-		Flash::Write(FirmwareFlashStart, strlen(formatBuffer), (uint8_t*)formatBuffer);
+			Flash::Unlock(FirmwareFlashStart, pageSize);
+			Flash::Write(FirmwareFlashStart, strlen(formatBuffer), (uint8_t*)formatBuffer);
 #else
-		cpu_irq_disable();
-		flash_unlock(FirmwareFlashStart, FirmwareFlashStart + pageSize, nullptr, nullptr);
-		flash_write(FirmwareFlashStart, formatBuffer, strlen(formatBuffer), 1);
-		// Start from bootloader next time
-		flash_clear_gpnvm(1);
-		cpu_irq_enable();
+			cpu_irq_disable();
+			flash_unlock(FirmwareFlashStart, FirmwareFlashStart + pageSize, nullptr, nullptr);
+			flash_write(FirmwareFlashStart, formatBuffer, strlen(formatBuffer), 1);
+			// Start from bootloader next time
+			flash_clear_gpnvm(1);
+			cpu_irq_enable();
 #endif
-		// no reason to lock it again
+			// no reason to lock it again
+		}
 	}
 
 #ifdef IAP_VIA_SPI
 	digitalWrite(SbcTfrReadyPin, false);
 #endif
 
-	delay_ms(500);							// allow last message to PanelDue to go
+	delay_ms(500);									// allow last message to PanelDue to go
 
 	digitalWrite(DiagLedPin, !LedOnPolarity);		// turn the LED off
 
