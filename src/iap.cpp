@@ -46,6 +46,10 @@
 # if USE_XDMAC
 # include "xdmac/xdmac.h"
 # endif
+
+# if USE_DMAC_MANAGER
+# include <DmacManager.h>
+# endif
 #endif // IAP_VIA_SPI
 
 // Later Duets have a diagnostic LED, which we flash regularly to indicate activity
@@ -58,8 +62,7 @@ bool ledIsOn;
 
 #ifdef IAP_VIA_SPI
 
-uint32_t writeData32[(blockReadSize + 3) / 4];
-char * const writeData = reinterpret_cast<char *>(writeData32);
+alignas(4) char writeData[blockReadSize];
 uint32_t transferStartTime;
 
 #else
@@ -134,14 +137,16 @@ extern "C" void SysTick_Handler(void) noexcept
 extern "C" void SVC_Handler() noexcept { for (;;) {} }
 extern "C" void PendSV_Handler() noexcept { for (;;) {} }
 
-#if SAME5x		// if using CoreNG
+#if SAME5x		// if using CoreN2G
 void AppMain() noexcept
 #else
 extern "C" void AppMain() noexcept
 #endif
 {
 #if SAME5x
+	CoreInit();
 	DeviceInit();
+
 	// Initialise systick (needed for delay calls) - CoreNG initialises it in non-interrupt mode
 	SysTick->LOAD = ((SystemCoreClockFreq/1000) - 1) << SysTick_LOAD_RELOAD_Pos;
 	SysTick->CTRL = (1 << SysTick_CTRL_ENABLE_Pos) | (1 << SysTick_CTRL_TICKINT_Pos) | (1 << SysTick_CTRL_CLKSOURCE_Pos);
@@ -153,10 +158,33 @@ extern "C" void AppMain() noexcept
 #ifdef IAP_VIA_SPI
 	pinMode(SbcTfrReadyPin, OUTPUT_LOW);
 
+# if SAME5x
+	for (Pin p : SbcSpiSercomPins)
+	{
+		SetPinFunction(p, SbcSpiSercomPinsMode);
+	}
+
+	Serial::EnableSercomClock(SbcSpiSercomNumber);
+	DmacManager::DisableChannel(DmacChanSbcRx);
+	DmacManager::DisableChannel(DmacChanSbcTx);
+
+	hri_sercomspi_set_CTRLA_SWRST_bit(SbcSpiSercom);
+	SbcSpiSercom->SPI.CTRLA.reg = SERCOM_SPI_CTRLA_DIPO(3) | SERCOM_SPI_CTRLA_DOPO(0) | SERCOM_SPI_CTRLA_MODE(2);
+	hri_sercomspi_write_CTRLB_reg(SbcSpiSercom, SERCOM_SPI_CTRLB_RXEN | SERCOM_SPI_CTRLB_SSDE | SERCOM_SPI_CTRLB_PLOADEN);
+#  if USE_32BIT_TRANSFERS
+	hri_sercomspi_write_CTRLC_reg(SbcSpiSercom, SERCOM_SPI_CTRLC_DATA32B);
+#  else
+	hri_sercomspi_write_CTRLC_reg(SbcSpiSercom, 0);
+#  endif
+# else
 	ConfigurePin(APIN_SBC_SPI_MOSI);
 	ConfigurePin(APIN_SBC_SPI_MISO);
 	ConfigurePin(APIN_SBC_SPI_SCK);
 	ConfigurePin(APIN_SBC_SPI_SS0);
+
+	spi_enable_clock(SBC_SPI);
+	spi_disable(SBC_SPI);
+# endif
 
 # if USE_DMAC
 	pmc_enable_periph_clk(ID_DMAC);
@@ -166,8 +194,6 @@ extern "C" void AppMain() noexcept
 	NVIC_DisableIRQ(XDMAC_IRQn);
 # endif
 
-	spi_enable_clock(SBC_SPI);
-	spi_disable(SBC_SPI);
 # if USE_DMAC
 	dmac_init(DMAC);
 	dmac_set_priority_mode(DMAC, DMAC_PRIORITY_ROUND_ROBIN);
@@ -230,6 +256,7 @@ bool transferReadyHigh = false;
 
 void setup_spi(size_t bytesToTransfer) noexcept
 {
+# if !SAME5x
 	// Reset SPI
 	spi_reset(SBC_SPI);
 	spi_set_slave_mode(SBC_SPI);
@@ -238,6 +265,8 @@ void setup_spi(size_t bytesToTransfer) noexcept
 	spi_set_clock_polarity(SBC_SPI, 0, 0);
 	spi_set_clock_phase(SBC_SPI, 0, 1);
 	spi_set_bits_per_transfer(SBC_SPI, 0, SPI_CSR_BITS_8_BIT);
+# endif
+
 # if USE_DMAC
 	dmac_channel_disable(DMAC, DmacChanSbcRx);
 	dmac_channel_disable(DMAC, DmacChanSbcTx);
@@ -338,14 +367,49 @@ void setup_spi(size_t bytesToTransfer) noexcept
 	xdmac_channel_set_descriptor_control(XDMAC, DmacChanSbcRx, 0);
 	xdmac_channel_enable(XDMAC, DmacChanSbcRx);
 	xdmac_disable_interrupt(XDMAC, DmacChanSbcRx);
+# elif USE_DMAC_MANAGER
+	DmacManager::DisableChannel(DmacChanSbcRx);
+	DmacManager::DisableChannel(DmacChanSbcTx);
+
+	DmacManager::SetSourceAddress(DmacChanSbcTx, writeData);
+	DmacManager::SetDestinationAddress(DmacChanSbcTx, &(SbcSpiSercom->SPI.DATA.reg));
+#  if USE_32BIT_TRANSFERS
+	DmacManager::SetBtctrl(DmacChanSbcTx, DMAC_BTCTRL_STEPSIZE_X1 | DMAC_BTCTRL_STEPSEL_SRC | DMAC_BTCTRL_SRCINC | DMAC_BTCTRL_BEATSIZE_WORD | DMAC_BTCTRL_BLOCKACT_NOACT);
+	DmacManager::SetDataLength(DmacChanSbcTx, (bytesToTransfer + 3) >> 2);			// must do this one last
+#  else
+	DmacManager::SetBtctrl(DmacChanSbcTx, DMAC_BTCTRL_STEPSIZE_X1 | DMAC_BTCTRL_STEPSEL_SRC | DMAC_BTCTRL_SRCINC | DMAC_BTCTRL_BEATSIZE_BYTE | DMAC_BTCTRL_BLOCKACT_NOACT);
+	DmacManager::SetDataLength(DmacChanSbcTx, bytesToTransfer);						// must do this one last
+#  endif
+	DmacManager::SetTriggerSourceSercomTx(DmacChanSbcTx, SbcSpiSercomNumber);
+
+	DmacManager::SetSourceAddress(DmacChanSbcRx, &(SbcSpiSercom->SPI.DATA.reg));
+	DmacManager::SetDestinationAddress(DmacChanSbcRx, readData);
+#  if USE_32BIT_TRANSFERS
+	DmacManager::SetBtctrl(DmacChanSbcRx, DMAC_BTCTRL_STEPSIZE_X1 | DMAC_BTCTRL_STEPSEL_DST | DMAC_BTCTRL_DSTINC | DMAC_BTCTRL_BEATSIZE_WORD | DMAC_BTCTRL_BLOCKACT_INT);
+	DmacManager::SetDataLength(DmacChanSbcRx, (bytesToTransfer + 3) >> 2);			// must do this one last
+#  else
+	DmacManager::SetBtctrl(DmacChanSbcRx, DMAC_BTCTRL_STEPSIZE_X1 | DMAC_BTCTRL_STEPSEL_DST | DMAC_BTCTRL_DSTINC | DMAC_BTCTRL_BEATSIZE_BYTE | DMAC_BTCTRL_BLOCKACT_INT);
+	DmacManager::SetDataLength(DmacChanSbcRx, bytesToTransfer);						// must do this one last
+#  endif
+	DmacManager::SetTriggerSourceSercomRx(DmacChanSbcRx, SbcSpiSercomNumber);
+
+	DmacManager::EnableChannel(DmacChanSbcRx, DmacPrioSbc);
+	DmacManager::EnableChannel(DmacChanSbcTx, DmacPrioSbc);
 # endif
 
 	// Enable SPI and notify the RaspPi we are ready
+#if SAME5x
+	SbcSpiSercom->SPI.INTFLAG.reg = 0xFF;			// clear any pending interrupts
+	SbcSpiSercom->SPI.INTENSET.reg = SERCOM_SPI_INTENSET_SSL;	// enable the start of transfer (SS low) interrupt
+	hri_sercomspi_set_CTRLA_ENABLE_bit(SbcSpiSercom);
+#else
 	spi_enable(SBC_SPI);
 
 	// Enable end-of-transfer interrupt
 	(void)SBC_SPI->SPI_SR;						// clear any pending interrupt
 	SBC_SPI->SPI_IER = SPI_IER_NSSR;				// enable the NSS rising interrupt
+#endif
+
 	NVIC_SetPriority(SBC_SPI_IRQn, NvicPrioritySpi);
 	NVIC_EnableIRQ(SBC_SPI_IRQn);
 
@@ -370,8 +434,17 @@ void disable_spi() noexcept
 	xdmac_channel_disable(XDMAC, DmacChanSbcTx);
 # endif
 
+# if USE_DMAC_MANAGER
+	DmacManager::DisableChannel(DmacChanSbcRx);
+	DmacManager::DisableChannel(DmacChanSbcTx);
+# endif
+
 	// Disable SPI
+#if SAME5x
+	hri_sercomspi_clear_CTRLA_ENABLE_bit(SbcSpiSercom);
+#else
 	spi_disable(SBC_SPI);
+#endif
 }
 
 # ifndef SBC_SPI_HANDLER
@@ -380,6 +453,17 @@ void disable_spi() noexcept
 
 extern "C" void SBC_SPI_HANDLER(void) noexcept
 {
+#if SAME5x
+	// On the SAM5x we can't get an end-of-transfer interrupt, only a start-of-transfer interrupt.
+	// So we can't disable SPI or DMA in this ISR.
+	const uint8_t status = SbcSpiSercom->SPI.INTFLAG.reg;
+	if ((status & SERCOM_SPI_INTENSET_SSL) != 0)
+	{
+		SbcSpiSercom->SPI.INTENCLR.reg = SERCOM_SPI_INTENSET_SSL;		// disable the interrupt
+		SbcSpiSercom->SPI.INTFLAG.reg = SERCOM_SPI_INTENSET_SSL;		// clear the status
+		dataReceived = true;
+	}
+#else
 	const uint32_t status = SBC_SPI->SPI_SR;							// read status and clear interrupt
 	SBC_SPI->SPI_IDR = SPI_IER_NSSR;									// disable the interrupt
 	if ((status & SPI_SR_NSSR) != 0)
@@ -388,6 +472,7 @@ extern "C" void SBC_SPI_HANDLER(void) noexcept
 		disable_spi();
 		dataReceived = true;
 	}
+#endif
 }
 
 bool is_spi_transfer_complete() noexcept
@@ -410,6 +495,20 @@ bool is_spi_transfer_complete() noexcept
 	if (dataReceived && (xdmac_channel_get_status(XDMAC) & ((1 << DmacChanSbcRx) | (1 << DmacChanSbcTx))) == 0)
 	{
 		transferPending = false;
+		return true;
+	}
+	return false;
+# elif USE_DMAC_MANAGER
+	if (dataReceived && digitalRead(SbcSSPin))	// transfer is complete if SS is high
+	{
+		if (transferPending)
+		{
+#  if SAME5x
+			// We cannot disable SPI in the ISR, do it here instead
+			disable_spi();
+#  endif
+			transferPending = false;
+		}
 		return true;
 	}
 	return false;

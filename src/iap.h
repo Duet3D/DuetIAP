@@ -63,6 +63,7 @@ const char * const fwFilePrefix = "0:/sys/RepRap";
 #if SAM4E	// Duet 2 Ethernet/WiFi
 # define USE_DMAC  1
 # define USE_XDMAC 0
+# define USE_DMAC_MAANGER 0
 # define SERIAL_AUX_DEVICE Serial
 constexpr Pin DiagLedPin = PortCPin(2);
 constexpr bool LedOnPolarity = true;
@@ -112,6 +113,7 @@ const char * const fwFilePrefix = "0:/sys/Duet";
 #if SAME70	// Duet 3
 # define USE_DMAC  0
 # define USE_XDMAC 1
+# define USE_DMAC_MAANGER 0
 # define SERIAL_AUX_DEVICE Serial
 const size_t NumSdCards = 2;
 const Pin DiagLedPin = PortCPin(20);
@@ -172,24 +174,23 @@ constexpr bool LedOnPolarity = false;
 
 # if defined(IAP_VIA_SPI)
 
-//TODO equivalent definitions for using a SERCOM and DmacManager
-//const uint32_t SBC_SPI_TX_PERID = 3;
-//const uint32_t SBC_SPI_RX_PERID = 4;
-//const uint8_t DmacChanSbcTx = 5;				// These two should be
-//const uint8_t DmacChanSbcRx = 6;				// kept in sync with RRF!
+#  define SBC_SPI_HANDLER SERCOM0_3_Handler
+#  define USE_32BIT_TRANSFERS 1
+constexpr unsigned int SbcSpiSercomNumber = 0;
+Sercom * const SbcSpiSercom = SERCOM0;
+constexpr IRQn SBC_SPI_IRQn = SERCOM0_3_IRQn;			// this is the SS Low interrupt, the only one we use
 
-// Duet pin numbers for the SBC interface
-//#define SBC_SPI					SPI1qq
-//#define SBC_SPI_INTERFACE_ID	ID_SPI1qq
-//#define SBC_SPI_IRQn			SPI1_IRQn
-//#define SBC_SPI_HANDLER			SPI1_Handler
-
-//constexpr Pin APIN_SBC_SPI_MOSI = APIN_SPI1_MOSI;qq
-//constexpr Pin APIN_SBC_SPI_MISO = APIN_SPI1_MISO;qq
-//constexpr Pin APIN_SBC_SPI_SCK = APIN_SPI1_SCK;qq
-//constexpr Pin APIN_SBC_SPI_SS0 = APIN_SPI1_SS0;qq
-
+//constexpr Pin SbcMosiPin = PortAPin(7);
+//constexpr Pin SbcMisoPin = PortAPin(4);
+//constexpr Pin SbcSclkPin = PortAPin(5);
+constexpr Pin SbcSSPin = PortAPin(6);
 constexpr Pin SbcTfrReadyPin = PortBPin(7);
+constexpr Pin SbcSpiSercomPins[] = { PortAPin(4), PortAPin(5), PortAPin(6), PortAPin(7) };
+constexpr GpioPinFunction SbcSpiSercomPinsMode = GpioPinFunction::D;
+
+constexpr DmaChannel DmacChanSbcTx = 8;
+constexpr DmaChannel DmacChanSbcRx = 9;
+constexpr DmaPriority DmacPrioSbc = 3;					// high speed SPI in slave mode
 
 # else
 
