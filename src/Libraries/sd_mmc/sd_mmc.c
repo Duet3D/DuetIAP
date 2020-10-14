@@ -82,7 +82,7 @@ typedef void (*driverIdleFunc_t)(uint32_t, uint32_t);
 
 struct DriverInterface
 {
-	void (*select_device)(uint8_t slot, uint32_t clock, uint8_t bus_width, bool high_speed);
+	bool (*select_device)(uint8_t slot, uint32_t clock, uint8_t bus_width, bool high_speed);
 	void (*deselect_device)(uint8_t slot);
 	uint8_t (*get_bus_width)(uint8_t slot);
 	bool (*is_high_speed_capable)(void);
@@ -124,10 +124,20 @@ bool hsmci_adtc_start_glue(sdmmc_cmd_def_t cmd, uint32_t arg, uint16_t block_siz
 	return hsmci_adtc_start(cmd, arg, block_size, nb_block, dmaAddr != NULL);
 }
 
+static bool hsmci_select_device_glue(uint8_t slot, uint32_t clock, uint8_t bus_width, bool high_speed) noexcept
+{
+	hsmci_select_device(slot, clock, bus_width, high_speed);
+	return true;
+}
+
 # endif
 
 static const struct DriverInterface hsmciInterface = {
+# ifdef __SAME54P20A__
 	.select_device = hsmci_select_device,
+# else
+	.select_device = hsmci_select_device_glue,
+# endif
 	.deselect_device = hsmci_deselect_device,
 	.get_bus_width = hsmci_get_bus_width,
 	.is_high_speed_capable = hsmci_is_high_speed_capable,

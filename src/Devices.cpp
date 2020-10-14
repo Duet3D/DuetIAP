@@ -12,8 +12,10 @@
 #include "Devices.h"
 #include "iap.h"
 
+#include <hal_gpio.h>
+
 // Serial device support
-Uart serialUart0(Serial0SercomNumber, Sercom0RxPad, 512, 512);
+Uart serialUart0(Serial0SercomNumber, Sercom0RxPad, 512, 512, [](Uart*) noexcept { }, [](Uart*) noexcept { });
 
 # if !defined(SERIAL0_ISR0) || !defined(SERIAL0_ISR2) || !defined(SERIAL0_ISR3)
 #  error SERIAL0_ISRn not defined

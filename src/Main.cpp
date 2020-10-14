@@ -13,6 +13,8 @@
 #include "iap.h"
 #include <Uart.h>
 #include <peripheral_clk_config.h>
+#include <hri_oscctrl_e54.h>
+#include <hri_gclk_e54.h>
 
 // Program entry point
 void AppInit() noexcept
