@@ -12,6 +12,7 @@
  */
 
 #include "iap.h"
+#include "Version.h"
 
 #if SAME5x
 # include "Devices.h"
@@ -74,6 +75,16 @@ const char* fwFile = defaultFwFile;
 uint32_t firmwareFileSize;
 bool isUf2File;
 
+#endif
+
+#if SAME5x
+// CoreN2G requires a version string
+extern const char VersionText[] =
+# ifdef IAP_VIA_SPI
+	"In-application programmer (SPI version) version " VERSION_TEXT;
+# else
+	"In-application programmer (SD version) version " VERSION_TEXT;
+# endif
 #endif
 
 alignas(4) char readData[blockReadSize];	// use aligned memory so DMA works well
