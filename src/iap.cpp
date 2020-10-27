@@ -125,7 +125,7 @@ void delay_ms(uint32_t ms) noexcept
 void MessageF(const char *fmt, ...) noexcept;			// forward declaration
 
 #if defined(DEBUG) && DEBUG
-# define debugPrintf(...)		do { MessageF(__VA_ARGS__); delay_ms(1000); } while (false)
+# define debugPrintf(...)		do { MessageF(__VA_ARGS__); } while (false)
 #else
 # define debugPrintf(...)		do { } while (false)
 #endif
@@ -1149,6 +1149,7 @@ void writeBinary()
 			// Attempt to flash the firmware again
 			flashPos = FirmwareFlashStart;
 			state = WritingUpgrade;
+			reportNextPercent = reportPercentIncrement;
 			retry = 0;
 		}
 		break;
@@ -1274,33 +1275,5 @@ extern "C" void TWI1_Handler() noexcept
 extern "C" void CacheFlushBeforeDMAReceive(const volatile void *start, size_t length) noexcept { }
 extern "C" void CacheInvalidateAfterDMAReceive(const volatile void *start, size_t length) noexcept { }
 extern "C" void CacheFlushBeforeDMASend(const volatile void *start, size_t length) noexcept { }
-
-#if DEBUG
-// We have to use our own USB transmit function here, because the core will assume that the USB line is closed
-void sendUSB(uint32_t ep, const void* d, uint32_t len) noexcept
-{
-    uint32_t n;
-	int r = len;
-	const uint8_t* data = (const uint8_t*)d;
-
-	while (len > 0)
-	{
-        if(ep==0) n = EP0_SIZE;
-        else n =  EPX_SIZE;
-		if (n > len)
-			n = len;
-		len -= n;
-
-		UDD_Send(ep & 0xF, data, n);
-		data += n;
-    }
-
-	// Not sure why, but this doesn't always work...
-	if (UDD_FifoByteCount(ep) > 0)
-	{
-		UDD_ReleaseTX(ep);
-	}
-}
-#endif
 
 // End

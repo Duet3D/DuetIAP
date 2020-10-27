@@ -272,6 +272,4 @@ void closeBinary();
 void writeBinary();
 void Reset(bool success);
 
-void sendUSB(uint32_t ep, const void* d, uint32_t len);
-
 #endif	// IAP_H_INCLUDED
