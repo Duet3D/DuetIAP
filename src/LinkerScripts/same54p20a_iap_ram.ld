@@ -34,8 +34,8 @@ SEARCH_DIR(.)
 /* Memory Spaces Definitions */
 MEMORY
 {
-	/* This file is for IAP binaries that load into the last 64kb of RAM */
-	code_ram (rx) : ORIGIN = 0x20030000, LENGTH = 0x00010000
+	/* This file is for IAP binaries that load into the last 32kb of RAM */
+	code_ram (rx) : ORIGIN = 0x20038000, LENGTH = 0x00008000
 	ram (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00030000
 }
 
