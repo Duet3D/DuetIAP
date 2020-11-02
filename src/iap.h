@@ -184,7 +184,7 @@ constexpr IRQn SBC_SPI_IRQn = SERCOM0_3_IRQn;			// this is the SS Low interrupt,
 //constexpr Pin SbcMisoPin = PortAPin(4);
 //constexpr Pin SbcSclkPin = PortAPin(5);
 constexpr Pin SbcSSPin = PortAPin(6);
-constexpr Pin SbcTfrReadyPin = PortBPin(7);
+constexpr Pin SbcTfrReadyPin = PortAPin(3);
 constexpr Pin SbcSpiSercomPins[] = { PortAPin(4), PortAPin(5), PortAPin(6), PortAPin(7) };
 constexpr GpioPinFunction SbcSpiSercomPinsMode = GpioPinFunction::D;
 
