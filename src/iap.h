@@ -63,7 +63,7 @@ const char * const fwFilePrefix = "0:/sys/RepRap";
 #if SAM4E	// Duet 2 Ethernet/WiFi
 # define USE_DMAC  1
 # define USE_XDMAC 0
-# define USE_DMAC_MAANGER 0
+# define USE_DMAC_MANAGER 0
 # define SERIAL_AUX_DEVICE Serial
 constexpr Pin DiagLedPin = PortCPin(2);
 constexpr bool LedOnPolarity = true;
@@ -98,6 +98,7 @@ constexpr uint8_t DmacChanSbcRx = 2;				// kept in sync with RRF!
 #endif
 
 #if SAM4S	// Duet 2 Maestro
+# define USE_DMAC_MANAGER 0
 # define SERIAL_AUX_DEVICE Serial
 const size_t NumSdCards = 2;
 const Pin SdCardDetectPins[NumSdCards] = {44, NoPin};
@@ -113,7 +114,7 @@ const char * const fwFilePrefix = "0:/sys/Duet";
 #if SAME70	// Duet 3
 # define USE_DMAC  0
 # define USE_XDMAC 1
-# define USE_DMAC_MAANGER 0
+# define USE_DMAC_MANAGER 0
 # define SERIAL_AUX_DEVICE Serial
 const size_t NumSdCards = 2;
 const Pin DiagLedPin = PortCPin(20);
