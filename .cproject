@@ -34,8 +34,6 @@
 								</option>
 								<option id="gnu.c.compiler.option.misc.other.1432846465" name="Other flags" superClass="gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-c -mcpu=cortex-m3 -mthumb -ffunction-sections -fdata-sections -nostdlib  -Wundef -Wdouble-promotion -fsingle-precision-constant" valueType="string"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.1594639411" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/variants/duet}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf/common/utils}&quot;"/>
@@ -58,8 +56,6 @@
 									<listOptionValue builtIn="false" value="__SAM3X8E__"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.559115198" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/cores/arduino}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/variants/duet}&quot;"/>
@@ -97,10 +93,7 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.481396151" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.38574094" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler">
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.477380321" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
-								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="gnu.both.asm.option.include.paths.477380321" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1127488456" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -110,14 +103,12 @@
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings">
 				<externalSettings containerId="CoreNG;cdt.managedbuild.config.gnu.cross.lib.release.897729483" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/CoreNG"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/CoreNG/SAM3X8E"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="CoreNG" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
 				</externalSettings>
 				<externalSettings containerId="RRFLibraries;cdt.managedbuild.config.gnu.cross.lib.release.1693990866.1176679643.1620965831.1699527086" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/RRFLibraries"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/RRFLibraries/SAM3X"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="RRFLibraries" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
@@ -203,13 +194,13 @@
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.643492432" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker"/>
 							<tool commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${LINK_FLAGS_1} ${INPUTS} ${LINK_FLAGS_2}" id="cdt.managedbuild.tool.gnu.cross.cpp.linker.498221185" name="Cross G++ Linker" superClass="cdt.managedbuild.tool.gnu.cross.cpp.linker">
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.paths.1173794665" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" useByScannerDiscovery="false" valueType="libPaths">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries/SAM4E}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/SAM4E8E}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/SAM4E8E/}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries/SAM4E}&quot;"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.libs.1846229600" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" useByScannerDiscovery="false" valueType="libs">
-									<listOptionValue builtIn="false" value="CoreNG"/>
-									<listOptionValue builtIn="false" value="RRFLibraries"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="RRFLibraries"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="CoreNG"/>
 								</option>
 								<option id="gnu.cpp.link.option.flags.1067011000" name="Linker flags" superClass="gnu.cpp.link.option.flags" useByScannerDiscovery="false" value="-Os --specs=nano.specs -Wl,--gc-sections -Wl,--fatal-warnings -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -T&quot;${workspace_loc:/CoreNG/variants/duetNG/linker_scripts/gcc/flash_iap.ld}&quot; -Wl,-Map,&quot;${workspace_loc:/${ProjName}/${ConfigName}}/${BuildArtifactFileBaseName}.map&quot;" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.387343967" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
@@ -219,10 +210,7 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.1963085254" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.1447856540" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler">
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.921684419" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
-								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="gnu.both.asm.option.include.paths.921684419" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1689041458" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -232,14 +220,12 @@
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings">
 				<externalSettings containerId="CoreNG;cdt.managedbuild.config.gnu.cross.lib.release.897729483.161018050" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/CoreNG"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/CoreNG/SAM4E8E"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="CoreNG" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
 				</externalSettings>
 				<externalSettings containerId="RRFLibraries;cdt.managedbuild.config.gnu.cross.lib.release.1693990866.9785103" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/RRFLibraries"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/RRFLibraries/SAM4E"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="RRFLibraries" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
@@ -280,8 +266,6 @@
 								</option>
 								<option id="gnu.c.compiler.option.misc.other.836770939" name="Other flags" superClass="gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-c -mcpu=cortex-m3 -mthumb -ffunction-sections -fdata-sections -nostdlib  -Wundef -Wdouble-promotion -fsingle-precision-constant" valueType="string"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.1506217625" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/variants/RADDS}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf/common/utils}&quot;"/>
@@ -305,8 +289,6 @@
 									<listOptionValue builtIn="false" value="__RADDS__"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.750226629" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/cores/arduino}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/variants/RADDS}&quot;"/>
@@ -344,10 +326,7 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.27630828" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.1171725822" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler">
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.720415585" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
-								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="gnu.both.asm.option.include.paths.720415585" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.628139848" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -357,14 +336,12 @@
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings">
 				<externalSettings containerId="CoreNG;cdt.managedbuild.config.gnu.cross.lib.release.897729483" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/CoreNG"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/CoreNG/SAM3X8E"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="CoreNG" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
 				</externalSettings>
 				<externalSettings containerId="RRFLibraries;cdt.managedbuild.config.gnu.cross.lib.release.1693990866.1176679643.1620965831.1699527086" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/RRFLibraries"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/RRFLibraries/SAM3X"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="RRFLibraries" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
@@ -447,13 +424,13 @@
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.132894769" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker"/>
 							<tool commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${LINK_FLAGS_1} ${INPUTS} ${LINK_FLAGS_2}" id="cdt.managedbuild.tool.gnu.cross.cpp.linker.493426891" name="Cross G++ Linker" superClass="cdt.managedbuild.tool.gnu.cross.cpp.linker">
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.paths.1965741295" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" useByScannerDiscovery="false" valueType="libPaths">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries/SAM4S}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/SAM4S}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/SAM4S/}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries/SAM4S}&quot;"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.libs.1106268704" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" useByScannerDiscovery="false" valueType="libs">
-									<listOptionValue builtIn="false" value="CoreNG"/>
-									<listOptionValue builtIn="false" value="RRFLibraries"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="RRFLibraries"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="CoreNG"/>
 								</option>
 								<option id="gnu.cpp.link.option.flags.2073902565" name="Linker flags" superClass="gnu.cpp.link.option.flags" useByScannerDiscovery="false" value="-Os --specs=nano.specs -Wl,--gc-sections -Wl,--fatal-warnings -mcpu=cortex-m4 -T&quot;${workspace_loc:/CoreNG/variants/sam4s/linker_scripts/gcc/flash_iap.ld}&quot; -Wl,-Map,&quot;${workspace_loc:/${ProjName}/${ConfigName}}/${BuildArtifactFileBaseName}.map&quot;" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1124708916" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
@@ -463,10 +440,7 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.564015390" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.1633641340" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler">
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.1960489585" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
-								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="gnu.both.asm.option.include.paths.1960489585" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.590298752" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -476,14 +450,12 @@
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings">
 				<externalSettings containerId="CoreNG;cdt.managedbuild.config.gnu.cross.lib.release.897729483.161018050.1509247235" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/CoreNG"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/CoreNG/SAM4S"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="CoreNG" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
 				</externalSettings>
 				<externalSettings containerId="RRFLibraries;cdt.managedbuild.config.gnu.cross.lib.release.1693990866.1176679643.789489053" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/RRFLibraries"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/RRFLibraries/SAM4S"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="RRFLibraries" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
@@ -524,8 +496,6 @@
 								</option>
 								<option id="gnu.c.compiler.option.misc.other.1028787005" name="Other flags" superClass="gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-c -mcpu=cortex-m3 -mthumb -ffunction-sections -fdata-sections -nostdlib --param max-inline-insns-single=500" valueType="string"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.1339597496" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/variants/alligator}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf/common/utils}&quot;"/>
@@ -550,8 +520,6 @@
 									<listOptionValue builtIn="false" value="__ALLIGATOR__"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.1421921401" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/cores/arduino}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/variants/alligator}&quot;"/>
@@ -590,10 +558,7 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.1300286480" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.1453562903" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler">
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.1703527935" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
-								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="gnu.both.asm.option.include.paths.1703527935" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.40895424" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -603,14 +568,12 @@
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings">
 				<externalSettings containerId="CoreNG;cdt.managedbuild.config.gnu.cross.lib.release.897729483" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/CoreNG"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/CoreNG/SAM3X8E"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="CoreNG" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
 				</externalSettings>
 				<externalSettings containerId="RRFLibraries;cdt.managedbuild.config.gnu.cross.lib.release.1693990866.1176679643.1620965831.1699527086" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/RRFLibraries"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/RRFLibraries/SAM3X"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="RRFLibraries" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
@@ -650,8 +613,6 @@
 								</option>
 								<option id="gnu.c.compiler.option.misc.other.2001445954" name="Other flags" superClass="gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-c -mcpu=cortex-m7 -mthumb -mfpu=fpv5-d16 -mfloat-abi=hard -ffunction-sections -fdata-sections -nostdlib -Wundef -Wdouble-promotion -fsingle-precision-constant" valueType="string"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.118916693" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/variants/same70}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf/common/utils}&quot;"/>
@@ -675,8 +636,6 @@
 									<listOptionValue builtIn="false" value="__SAME70Q20B__"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.1550206696" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/cores/arduino}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/variants/same70}&quot;"/>
@@ -713,10 +672,7 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.898991331" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.395147742" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler">
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.1730520927" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
-								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="gnu.both.asm.option.include.paths.1730520927" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1818590815" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -726,14 +682,12 @@
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings">
 				<externalSettings containerId="CoreNG;cdt.managedbuild.config.gnu.cross.lib.release.897729483.161018050.906601308" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/CoreNG"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/CoreNG/SAME70"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="CoreNG" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
 				</externalSettings>
 				<externalSettings containerId="RRFLibraries;cdt.managedbuild.config.gnu.cross.lib.release.1693990866.1913177425.1067689062" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/RRFLibraries"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/RRFLibraries/SAME70"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="RRFLibraries" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
@@ -820,12 +774,12 @@
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.1008468362" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker"/>
 							<tool commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${LINK_FLAGS_1} ${INPUTS} ${LINK_FLAGS_2}" id="cdt.managedbuild.tool.gnu.cross.cpp.linker.1377943821" name="Cross G++ Linker" superClass="cdt.managedbuild.tool.gnu.cross.cpp.linker">
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.paths.591009710" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" useByScannerDiscovery="false" valueType="libPaths">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/SAM4E8E}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries/SAM4E}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/SAM4E8E}&quot;"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.libs.1744526929" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" useByScannerDiscovery="false" valueType="libs">
-									<listOptionValue builtIn="false" value="CoreNG"/>
-									<listOptionValue builtIn="false" value="RRFLibraries"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="RRFLibraries"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="CoreNG"/>
 								</option>
 								<option id="gnu.cpp.link.option.flags.659667212" name="Linker flags" superClass="gnu.cpp.link.option.flags" useByScannerDiscovery="false" value="-Os --specs=nano.specs -Wl,--gc-sections -Wl,--fatal-warnings -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -T&quot;${workspace_loc:/CoreNG/variants/duetNG/linker_scripts/gcc/iap_ram.ld}&quot; -Wl,-Map,&quot;${workspace_loc:/${ProjName}/${ConfigName}}/${BuildArtifactFileBaseName}.map&quot;" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.410764667" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
@@ -835,10 +789,7 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.921448984" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.729580394" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler">
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.830077047" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
-								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="gnu.both.asm.option.include.paths.830077047" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.229894290" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -848,14 +799,12 @@
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings">
 				<externalSettings containerId="CoreNG;cdt.managedbuild.config.gnu.cross.lib.release.897729483.161018050" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/CoreNG"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/CoreNG/SAM4E8E"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="CoreNG" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
 				</externalSettings>
 				<externalSettings containerId="RRFLibraries;cdt.managedbuild.config.gnu.cross.lib.release.1693990866.9785103" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/RRFLibraries"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/RRFLibraries/SAM4E"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="RRFLibraries" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
@@ -939,13 +888,13 @@
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.337600384" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker"/>
 							<tool commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${LINK_FLAGS_1} ${INPUTS} ${LINK_FLAGS_2}" id="cdt.managedbuild.tool.gnu.cross.cpp.linker.674059896" name="Cross G++ Linker" superClass="cdt.managedbuild.tool.gnu.cross.cpp.linker">
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.paths.1221172922" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" useByScannerDiscovery="false" valueType="libPaths">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries/SAM4S}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/SAM4S}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/SAM4S/}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries/SAM4S}&quot;"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.libs.1562016224" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" useByScannerDiscovery="false" valueType="libs">
-									<listOptionValue builtIn="false" value="CoreNG"/>
-									<listOptionValue builtIn="false" value="RRFLibraries"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="RRFLibraries"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="CoreNG"/>
 								</option>
 								<option id="gnu.cpp.link.option.flags.1429518142" name="Linker flags" superClass="gnu.cpp.link.option.flags" useByScannerDiscovery="false" value="-Os --specs=nano.specs -Wl,--gc-sections -Wl,--fatal-warnings -mcpu=cortex-m4 -T&quot;${workspace_loc:/CoreNG/variants/sam4s/linker_scripts/gcc/iap_ram.ld}&quot; -Wl,-Map,&quot;${workspace_loc:/${ProjName}/${ConfigName}}/${BuildArtifactFileBaseName}.map&quot;" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1772480588" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
@@ -955,10 +904,7 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.386179417" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.1204972757" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler">
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.59550601" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
-								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="gnu.both.asm.option.include.paths.59550601" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.2057305713" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -968,14 +914,12 @@
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings">
 				<externalSettings containerId="CoreNG;cdt.managedbuild.config.gnu.cross.lib.release.897729483.161018050.1509247235" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/CoreNG"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/CoreNG/SAM4S"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="CoreNG" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
 				</externalSettings>
 				<externalSettings containerId="RRFLibraries;cdt.managedbuild.config.gnu.cross.lib.release.1693990866.1176679643.789489053" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/RRFLibraries"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/RRFLibraries/SAM4S"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="RRFLibraries" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
@@ -1015,8 +959,6 @@
 								</option>
 								<option id="gnu.c.compiler.option.misc.other.1170327333" name="Other flags" superClass="gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-c -mcpu=cortex-m7 -mthumb -mfpu=fpv5-d16 -mfloat-abi=hard -ffunction-sections -fdata-sections -nostdlib -Wundef -Wdouble-promotion -fsingle-precision-constant" valueType="string"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.202060844" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/variants/same70}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf/common/utils}&quot;"/>
@@ -1041,8 +983,6 @@
 									<listOptionValue builtIn="false" value="IAP_IN_RAM"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.1587419434" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/cores/arduino}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/variants/same70}&quot;"/>
@@ -1079,10 +1019,7 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.1202909437" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.767646429" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler">
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.1487496431" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
-								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="gnu.both.asm.option.include.paths.1487496431" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1788713897" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -1092,14 +1029,12 @@
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings">
 				<externalSettings containerId="CoreNG;cdt.managedbuild.config.gnu.cross.lib.release.897729483.161018050.906601308" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/CoreNG"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/CoreNG/SAME70"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="CoreNG" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
 				</externalSettings>
 				<externalSettings containerId="RRFLibraries;cdt.managedbuild.config.gnu.cross.lib.release.1693990866.1913177425.1067689062" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/RRFLibraries"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/RRFLibraries/SAME70"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="RRFLibraries" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
@@ -1139,8 +1074,6 @@
 								</option>
 								<option id="gnu.c.compiler.option.misc.other.541466788" name="Other flags" superClass="gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-c -mcpu=cortex-m7 -mthumb -mfpu=fpv5-d16 -mfloat-abi=hard -ffunction-sections -fdata-sections -nostdlib -Wundef -Wdouble-promotion -fsingle-precision-constant" valueType="string"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.704220600" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/variants/same70}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf/common/utils}&quot;"/>
@@ -1163,8 +1096,6 @@
 									<listOptionValue builtIn="false" value="IAP_VIA_SPI"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.376200717" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/cores/arduino}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/variants/same70}&quot;"/>
@@ -1201,10 +1132,7 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.1666194425" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.244678888" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler">
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.1747437781" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
-								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="gnu.both.asm.option.include.paths.1747437781" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1048811200" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -1217,14 +1145,12 @@
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings">
 				<externalSettings containerId="CoreNG;cdt.managedbuild.config.gnu.cross.lib.release.897729483.161018050.906601308" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/CoreNG"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/CoreNG/SAME70"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="CoreNG" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
 				</externalSettings>
 				<externalSettings containerId="RRFLibraries;cdt.managedbuild.config.gnu.cross.lib.release.1693990866.1913177425.1067689062" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/RRFLibraries"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/RRFLibraries/SAME70"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="RRFLibraries" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
@@ -1264,8 +1190,6 @@
 								</option>
 								<option id="gnu.c.compiler.option.misc.other.582496238" name="Other flags" superClass="gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-c -mcpu=cortex-m7 -mthumb -mfpu=fpv5-d16 -mfloat-abi=hard -ffunction-sections -fdata-sections -nostdlib -Wundef -Wdouble-promotion -fsingle-precision-constant" valueType="string"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.623462634" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/variants/same70}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/asf/common/utils}&quot;"/>
@@ -1289,8 +1213,6 @@
 									<listOptionValue builtIn="false" value="IAP_VIA_SPI"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.1596433010" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/cores/arduino}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/variants/same70}&quot;"/>
@@ -1327,10 +1249,7 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.1438174147" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.1318192544" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler">
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.1064146204" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
-								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="gnu.both.asm.option.include.paths.1064146204" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.2014554163" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -1343,14 +1262,12 @@
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings">
 				<externalSettings containerId="CoreNG;cdt.managedbuild.config.gnu.cross.lib.release.897729483.161018050.906601308" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/CoreNG"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/CoreNG/SAME70"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="CoreNG" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
 				</externalSettings>
 				<externalSettings containerId="RRFLibraries;cdt.managedbuild.config.gnu.cross.lib.release.1693990866.1913177425.1067689062" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/RRFLibraries"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/RRFLibraries/SAME70"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="RRFLibraries" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
@@ -1437,13 +1354,13 @@
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.1762663342" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker"/>
 							<tool commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${LINK_FLAGS_1} ${INPUTS} ${LINK_FLAGS_2}" id="cdt.managedbuild.tool.gnu.cross.cpp.linker.1302431233" name="Cross G++ Linker" superClass="cdt.managedbuild.tool.gnu.cross.cpp.linker">
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.paths.1383935473" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" useByScannerDiscovery="false" valueType="libPaths">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries/SAM4E}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/SAM4E8E}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG/SAM4E8E/}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries/SAM4E}&quot;"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.libs.864348999" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" useByScannerDiscovery="false" valueType="libs">
-									<listOptionValue builtIn="false" value="CoreNG"/>
-									<listOptionValue builtIn="false" value="RRFLibraries"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="RRFLibraries"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="CoreNG"/>
 								</option>
 								<option id="gnu.cpp.link.option.flags.181342510" name="Linker flags" superClass="gnu.cpp.link.option.flags" useByScannerDiscovery="false" value="-Os --specs=nano.specs -Wl,--gc-sections -Wl,--fatal-warnings -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -T&quot;${workspace_loc:/CoreNG/variants/duetNG/linker_scripts/gcc/iap_ram.ld}&quot; -Wl,-Map,&quot;${workspace_loc:/${ProjName}/${ConfigName}}/${BuildArtifactFileBaseName}.map&quot;" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1765754232" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
@@ -1453,10 +1370,7 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.1322066925" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.807325079" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler">
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.1473548830" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreNG}&quot;"/>
-								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="gnu.both.asm.option.include.paths.1473548830" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.97992371" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -1469,14 +1383,12 @@
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings">
 				<externalSettings containerId="CoreNG;cdt.managedbuild.config.gnu.cross.lib.release.897729483.161018050" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/CoreNG"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/CoreNG/SAM4E8E"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="CoreNG" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
 				</externalSettings>
 				<externalSettings containerId="RRFLibraries;cdt.managedbuild.config.gnu.cross.lib.release.1693990866.9785103" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/RRFLibraries"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/RRFLibraries/SAM4E"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="RRFLibraries" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
@@ -1517,8 +1429,6 @@
 								</option>
 								<option id="gnu.c.compiler.option.misc.other.2082615467" name="Other flags" superClass="gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-c -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard -ffunction-sections -fdata-sections -nostdlib -Wundef -Wdouble-promotion -fsingle-precision-constant" valueType="string"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.1166628062" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreN2G}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreN2G/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreN2G/src/SAME5x_C21/SAME5x}&quot;"/>
@@ -1539,8 +1449,6 @@
 									<listOptionValue builtIn="false" value="IAP_IN_RAM"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.780409659" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreN2G}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreN2G/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreN2G/src/SAME5x_C21}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreN2G/src/SAME5x_C21/SAME5x}&quot;"/>
@@ -1575,10 +1483,7 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.648436945" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.662499809" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler">
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.2068567177" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreN2G}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="gnu.both.asm.option.include.paths.2068567177" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1998700986" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -1588,14 +1493,12 @@
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings">
 				<externalSettings containerId="RRFLibraries;cdt.managedbuild.config.gnu.cross.lib.release.1693990866.1129583112.1313063177" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/RRFLibraries"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/RRFLibraries/SAME51"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="RRFLibraries" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
 				</externalSettings>
 				<externalSettings containerId="CoreN2G;cdt.managedbuild.config.gnu.cross.lib.release.675522878.1031364120" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/CoreN2G"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/CoreN2G/SAME5x_SDHC"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="CoreN2G" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
@@ -1636,8 +1539,6 @@
 								</option>
 								<option id="gnu.c.compiler.option.misc.other.618199795" name="Other flags" superClass="gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-c -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard -ffunction-sections -fdata-sections -nostdlib -Wundef -Wdouble-promotion -fsingle-precision-constant" valueType="string"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.1667162932" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreN2G}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreN2G/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreN2G/src/SAME5x_C21/SAME5x}&quot;"/>
@@ -1659,8 +1560,6 @@
 									<listOptionValue builtIn="false" value="IAP_VIA_SPI"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.1368664100" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreN2G}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreN2G/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreN2G/src/SAME5x_C21}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreN2G/src/SAME5x_C21/SAME5x}&quot;"/>
@@ -1695,10 +1594,7 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.1677013411" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.2006975077" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler">
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.1693345293" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CoreN2G}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RRFLibraries}&quot;"/>
-								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="gnu.both.asm.option.include.paths.1693345293" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.596320854" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -1708,14 +1604,12 @@
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings">
 				<externalSettings containerId="RRFLibraries;cdt.managedbuild.config.gnu.cross.lib.release.1693990866.1129583112.1313063177" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/RRFLibraries"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/RRFLibraries/SAME51"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="RRFLibraries" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
 				</externalSettings>
 				<externalSettings containerId="CoreN2G;cdt.managedbuild.config.gnu.cross.lib.release.675522878.1031364120" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/CoreN2G"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/CoreN2G/SAME5x_SDHC"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="CoreN2G" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
