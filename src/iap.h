@@ -223,6 +223,7 @@ const uint32_t iapFirmwareSize = 0x20000;								// 128 KiB max (SAME70 has 128k
 # else
 const uint32_t iapFirmwareSize = 0x10000;								// 64 KiB max
 # endif
+const uint32_t FirmwareFlashStart = IFLASH_ADDR;
 const uint32_t FirmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE - iapFirmwareSize;
 
 #endif

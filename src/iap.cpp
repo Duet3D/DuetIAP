@@ -16,12 +16,11 @@
 
 #if SAME5x
 # include "Devices.h"
-# include <Flash.h>
 # include <hri_sercom_e54.h>
 # define SERIAL_AUX_DEVICE (serialUart0)
-#else
-# include "flash_efc.h"
 #endif
+
+#include <Flash.h>
 
 #include <General/SafeVsnprintf.h>
 #include <General/StringFunctions.h>
