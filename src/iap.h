@@ -94,10 +94,10 @@ const uint8_t DmacChanSbcRx = 6;				// kept in sync with RRF!
 #define SBC_SPI_IRQn			SPI1_IRQn
 #define SBC_SPI_HANDLER			SPI1_Handler
 
-constexpr Pin APIN_SBC_SPI_MOSI = APIN_SPI1_MOSI;
-constexpr Pin APIN_SBC_SPI_MISO = APIN_SPI1_MISO;
-constexpr Pin APIN_SBC_SPI_SCK = APIN_SPI1_SCK;
-constexpr Pin APIN_SBC_SPI_SS0 = APIN_SPI1_SS0;
+constexpr Pin APIN_SBC_SPI_MOSI = PortCPin(27);
+constexpr Pin APIN_SBC_SPI_MISO = PortCPin(26);
+constexpr Pin APIN_SBC_SPI_SCK = PortCPin(24);
+constexpr Pin APIN_SBC_SPI_SS0 = PortCPin(25);
 
 constexpr Pin SbcTfrReadyPin = PortEPin(2);
 

@@ -123,12 +123,6 @@ constexpr auto HsmciMclkPinFunction = GpioPinFunction::C;
 constexpr Pin HsmciOtherPins[] = { PortAPin(26), PortAPin(27), PortAPin(28), PortAPin(20), PortAPin(31) };
 constexpr auto HsmciOtherkPinsFunction = GpioPinFunction::C;
 
-void SerialInit() noexcept
-{
-	ConfigurePin(APINS_Serial0);			// Initialize Serial port U(S)ART pins
-	setPullup(APIN_Serial0_RXD, true); 		// Enable pullup
-}
-
 void UART1_Handler(void)
 {
 	serialUart0.IrqHandler();
@@ -147,12 +141,6 @@ constexpr auto HsmciMclkPinFunction = GpioPinFunction::D;
 constexpr Pin HsmciOtherPins[] = { PortAPin(26), PortAPin(27), PortAPin(28), PortAPin(20), PortAPin(31) };
 constexpr auto HsmciOtherkPinsFunction = GpioPinFunction::C;
 
-void SerialInit() noexcept
-{
-	ConfigurePin(APINS_Serial0);			// Initialize Serial port U(S)ART pins
-	setPullup(APIN_Serial0_RXD, true); 		// Enable pullup
-}
-
 void UART2_Handler(void)
 {
 	serialUart0.IrqHandler();
@@ -164,7 +152,7 @@ void SerialInit() noexcept
 {
 	SetPinFunction(APIN_Serial0_RXD, Serial0PinFunction);
 	SetPinFunction(APIN_Serial0_TXD, Serial0PinFunction);
-	SetPullup(APIN_Serial0_RXD, true); 		// Enable pullup
+	SetPullup(APIN_Serial0_RXD, true);
 }
 
 void SdhcInit() noexcept
