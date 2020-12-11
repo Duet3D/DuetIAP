@@ -13,58 +13,21 @@
 
 #ifndef IAP_H_INCLUDED
 
-#include <Core.h>
+#include <CoreIO.h>
 
-#if SAME5x
-# include <CoreIO.h>
-#elif SAM4S
+#if SAM4S
 # define IFLASH_ADDR		(IFLASH0_ADDR)
 # define IFLASH_PAGE_SIZE	(IFLASH0_PAGE_SIZE)
-#elif SAM3XA
-# define IFLASH_ADDR		(IFLASH0_ADDR)
-# define IFLASH_PAGE_SIZE	(IFLASH1_PAGE_SIZE)
 #else
 // IFLASH_ADDR and IFLASH_PAGE_SIZE are already defined for the SAM4E and the SAME70
 #endif
 
 const uint32_t UsbBaudRate = 115200;						// For USB diagnostics
 
-#if SAM3XA
-# ifdef __RADDS__
-#  define SERIAL_AUX_DEVICE Serial1
-const size_t NumSdCards = 2;
-const Pin SdCardDetectPins[NumSdCards] = { 14, 14 };
-const Pin SdWriteProtectPins[NumSdCards] = { NoPin, NoPin };
-const Pin SdSpiCSPins[2] = { 87, 77 };
-const Pin DiagLedPin = NoPin;
-const char * const defaultFwFile = "0:/sys/RepRapFirmware-RADDS.bin";	// Which file shall be used for IAP?
-const char * const fwFilePrefix = "0:/sys/RepRap";
-# elif defined(__ALLIGATOR__)
-#  define SERIAL_AUX_DEVICE Serial1
-const size_t NumSdCards = 1;
-const Pin SdCardDetectPins[NumSdCards] = { 87 };
-const Pin SdWriteProtectPins[NumSdCards] = { NoPin };
-const Pin SdSpiCSPins[2] = { 77 };
-const Pin DiagLedPin = NoPin;
-const char * const defaultFwFile = "0:/sys/RepRapFirmware-Alligator.bin";	// Which file shall be used for IAP?
-const char * const fwFilePrefix = "0:/sys/RepRap";
-# else	// Duet 06/085
-#  define SERIAL_AUX_DEVICE Serial
-const size_t NumSdCards = 2;
-const Pin SdCardDetectPins[NumSdCards] = {NoPin, NoPin};				// Don't use the Card Detect pin on the Duet 085
-const Pin SdWriteProtectPins[NumSdCards] = {NoPin, NoPin};
-const Pin SdSpiCSPins[1] = {67};
-const Pin DiagLedPin = NoPin;
-const char * const defaultFwFile = "0:/sys/RepRapFirmware.bin";			// Which file shall be used for IAP?
-const char * const fwFilePrefix = "0:/sys/RepRap";
-# endif
-#endif
-
 #if SAM4E	// Duet 2 Ethernet/WiFi
 # define USE_DMAC  1
 # define USE_XDMAC 0
 # define USE_DMAC_MANAGER 0
-# define SERIAL_AUX_DEVICE Serial
 constexpr Pin DiagLedPin = PortCPin(2);
 constexpr bool LedOnPolarity = true;
 
@@ -82,10 +45,10 @@ const char * const fwFilePrefix = "0:/sys/Duet";
 #define SBC_SPI_INTERFACE_ID	ID_SPI
 #define SBC_SPI_IRQn			SPI_IRQn
 #define SBC_SPI_HANDLER			SPI_Handler
-constexpr Pin APIN_SBC_SPI_MOSI = APIN_SPI_MOSI;
-constexpr Pin APIN_SBC_SPI_MISO = APIN_SPI_MISO;
-constexpr Pin APIN_SBC_SPI_SCK  = APIN_SPI_SCK;
-constexpr Pin APIN_SBC_SPI_SS0  = APIN_SPI_SS0;
+constexpr Pin APIN_SBC_SPI_MOSI = PortAPin(13);
+constexpr Pin APIN_SBC_SPI_MISO = PortAPin(12);
+constexpr Pin APIN_SBC_SPI_SCK  = PortAPin(14);
+constexpr Pin APIN_SBC_SPI_SS0  = PortAPin(11);
 
 // Hardware IDs of the SPI transmit and receive DMA interfaces. See atsam datasheet.
 const uint32_t SBC_SPI_TX_DMA_HW_ID = 1;
@@ -99,7 +62,6 @@ constexpr uint8_t DmacChanSbcRx = 2;				// kept in sync with RRF!
 
 #if SAM4S	// Duet 2 Maestro
 # define USE_DMAC_MANAGER 0
-# define SERIAL_AUX_DEVICE Serial
 const size_t NumSdCards = 2;
 const Pin SdCardDetectPins[NumSdCards] = {44, NoPin};
 const Pin SdWriteProtectPins[NumSdCards] = {NoPin, NoPin};
@@ -115,7 +77,6 @@ const char * const fwFilePrefix = "0:/sys/Duet";
 # define USE_DMAC  0
 # define USE_XDMAC 1
 # define USE_DMAC_MANAGER 0
-# define SERIAL_AUX_DEVICE Serial
 const size_t NumSdCards = 2;
 const Pin DiagLedPin = PortCPin(20);
 constexpr bool LedOnPolarity = true;

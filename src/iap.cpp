@@ -12,12 +12,11 @@
  */
 
 #include "iap.h"
+#include "Devices.h"
 #include "Version.h"
 
 #if SAME5x
-# include "Devices.h"
 # include <hri_sercom_e54.h>
-# define SERIAL_AUX_DEVICE (serialUart0)
 #endif
 
 #include <Flash.h>
@@ -35,22 +34,31 @@
 
 #define DEBUG	0
 
+#if SAM4E || SAM4S || SAME70
+# include <asf/sam/drivers/pmc/pmc.h>
+#endif
+
 #if SAM4E || SAM4S || SAME70 || SAME5x
 
 # ifdef IAP_VIA_SPI
 
+# if SAM4E || SAME70
+# include <asf/sam/drivers/spi/spi.h>
+# endif
+
 # if USE_DMAC
-# include "dmac/dmac.h"
-# include "matrix/matrix.h"
+# include <asf/sam/drivers/dmac/dmac.h>
+# include <asf/sam/drivers/matrix/matrix.h>
 # endif
 
 # if USE_XDMAC
-# include "xdmac/xdmac.h"
+# include <asf/sam/drivers/xdmac/xdmac.h>
 # endif
 
 # if USE_DMAC_MANAGER
 # include <DmacManager.h>
 # endif
+
 #endif // IAP_VIA_SPI
 
 // Later Duets have a diagnostic LED, which we flash regularly to indicate activity
@@ -134,27 +142,18 @@ extern "C" void UrgentInit() noexcept { }
 extern "C" void SysTick_Handler(void) noexcept
 {
 	CoreSysTick();
-#if SAME5x
 	WatchdogReset();
-#else
-	wdt_restart(WDT);							// kick the watchdog
-#endif
 
 #if SAM4E || SAME70
-	rswdt_restart(RSWDT);						// kick the secondary watchdog
+	WatchdogResetSecondary();
 #endif
 }
 
 extern "C" void SVC_Handler() noexcept { for (;;) {} }
 extern "C" void PendSV_Handler() noexcept { for (;;) {} }
 
-#if SAME5x		// if using CoreN2G
 void AppMain() noexcept
-#else
-extern "C" void AppMain() noexcept
-#endif
 {
-#if SAME5x
 	CoreInit();
 	DeviceInit();
 
@@ -162,9 +161,6 @@ extern "C" void AppMain() noexcept
 	SysTick->LOAD = ((SystemCoreClockFreq/1000) - 1) << SysTick_LOAD_RELOAD_Pos;
 	SysTick->CTRL = (1 << SysTick_CTRL_ENABLE_Pos) | (1 << SysTick_CTRL_TICKINT_Pos) | (1 << SysTick_CTRL_CLKSOURCE_Pos);
 	NVIC_SetPriority (SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL); /* set Priority for Systick Interrupt */
-#else
-	SysTickInit();
-#endif
 
 #ifdef IAP_VIA_SPI
 	pinMode(SbcTfrReadyPin, OUTPUT_LOW);
@@ -188,10 +184,10 @@ extern "C" void AppMain() noexcept
 	hri_sercomspi_write_CTRLC_reg(SbcSpiSercom, 0);
 #  endif
 # else
-	ConfigurePin(APIN_SBC_SPI_MOSI);
-	ConfigurePin(APIN_SBC_SPI_MISO);
-	ConfigurePin(APIN_SBC_SPI_SCK);
-	ConfigurePin(APIN_SBC_SPI_SS0);
+	SetPinFunction(APIN_SBC_SPI_MOSI, GpioPinFunction::A);
+	SetPinFunction(APIN_SBC_SPI_MISO, GpioPinFunction::A);
+	SetPinFunction(APIN_SBC_SPI_SCK, GpioPinFunction::A);
+	SetPinFunction(APIN_SBC_SPI_SS0, GpioPinFunction::A);
 
 	spi_enable_clock(SBC_SPI);
 	spi_disable(SBC_SPI);
@@ -224,7 +220,7 @@ extern "C" void AppMain() noexcept
 	ledIsOn = true;
 	lastLedMillis = millis();
 
-	SERIAL_AUX_DEVICE.begin(57600);				// set serial port to default PanelDue baud rate
+	serialUart0.begin(57600);				// set serial port to default PanelDue baud rate
 	MessageF("IAP started");
 
 #if SAME5x
@@ -917,7 +913,6 @@ void writeBinary()
 		{
 			debugPrintf("Unlocking 0x%08x - 0x%08x", flashPos, flashPos + pageSize - 1);
 
-# if SAME5x
 			// We can unlock all the flash in one call. We may have to unlock from before the firmware start. The bootloader is protected separately.
 			const uint32_t unlockStart = FirmwareFlashStart & ~(Flash::GetLockRegionSize() - 1);
 			if (Flash::Unlock(unlockStart, FirmwareFlashEnd - unlockStart))
@@ -930,39 +925,9 @@ void writeBinary()
 			{
 				++retry;
 			}
-# else
-			// Unlock each single page
-			cpu_irq_disable();
-			const bool ok = (flash_unlock(flashPos, flashPos + pageSize - 1, nullptr, nullptr) == FLASH_RC_OK);
-			cpu_irq_enable();
-			if (ok)
-			{
-				flashPos += pageSize;
-				retry = 0;
-			}
-			else
-			{
-				retry++;
-				break;
-			}
-
-			// Make sure we stay within FW Flash area
-			if (flashPos >= FirmwareFlashEnd)
-			{
-				flashPos = FirmwareFlashStart;
-# if SAM4E || SAM4S || SAME70 || SAME5x
-				MessageF("Erasing flash");
-				state = ErasingFlash;
-# else
-				bytesWritten = blockReadSize;
-				state = WritingUpgrade;
-# endif
-			}
-#endif
 		}
 		break;
 
-#if SAM4E || SAM4S || SAME70 || SAME5x
 	case ErasingFlash:
 		debugPrintf("Erasing 0x%08x", flashPos);
 		if (retry != 0)
@@ -992,7 +957,7 @@ void writeBinary()
 						: 128 * 1024;
 # endif
 			// No need to erase a sector that is already erased
-			if (IsSectorErased(flashPos, sectorSize) || flash_erase_sector(flashPos) == FLASH_RC_OK)
+			if (IsSectorErased(flashPos, sectorSize) || Flash::EraseSector(flashPos))
 #endif
 			{
 				// Check that the sector really is erased
@@ -1023,7 +988,6 @@ void writeBinary()
 			}
 		}
 		break;
-#endif
 
 	case WritingUpgrade:
 		// Attempt to read a chunk from the firmware file or SBC
@@ -1046,18 +1010,7 @@ void writeBinary()
 				MessageF("Flash write retry #%u", retry);
 			}
 
-#if SAME5x
 			const bool ok = Flash::Write(flashPos, pageSize, (uint8_t*)readData + bytesWritten);
-#else
-			cpu_irq_disable();
-			const bool ok =
-# if SAM4E || SAM4S || SAME70
-								flash_write(flashPos, readData + bytesWritten, pageSize, 0) == FLASH_RC_OK;
-# else
-								flash_write(flashPos, readData + bytesWritten, pageSize, 1) == FLASH_RC_OK;
-# endif
-			cpu_irq_enable();
-#endif
 			if (!ok)
 			{
 				++retry;
@@ -1159,7 +1112,6 @@ void writeBinary()
 		{
 			debugPrintf("Locking 0x%08x - 0x%08x", flashPos, flashPos + pageSize - 1);
 
-# if SAME5x
 			// We can lock all the flash in one call. We may have to unlock from before the firmware start.
 			const uint32_t lockStart = FirmwareFlashStart & ~(Flash::GetLockRegionSize() - 1);
 			if (Flash::Lock(lockStart, FirmwareFlashEnd - lockStart))
@@ -1171,25 +1123,6 @@ void writeBinary()
 			{
 				++retry;
 			}
-# else
-			cpu_irq_disable();
-			const bool ok = (flash_lock(flashPos, flashPos + pageSize - 1, nullptr, nullptr) == FLASH_RC_OK);
-			cpu_irq_enable();
-			if (ok)
-			{
-				flashPos += pageSize;
-				if (flashPos >= FirmwareFlashEnd)
-				{
-					MessageF("Update successful! Rebooting...");
-					Reset(true);
-				}
-				retry = 0;
-			}
-			else
-			{
-				retry++;
-			}
-#endif
 		}
 		break;
 	}
@@ -1213,16 +1146,11 @@ void Reset(bool success) noexcept
 		{
 			// If anything went wrong, write the last error message to Flash to the beginning
 			// of the Flash memory. That may help finding out what went wrong...
-#if SAME5x
 			Flash::Unlock(FirmwareFlashStart, pageSize);
 			Flash::Write(FirmwareFlashStart, strlen(formatBuffer), (uint8_t*)formatBuffer);
-#else
-			cpu_irq_disable();
-			flash_unlock(FirmwareFlashStart, FirmwareFlashStart + pageSize, nullptr, nullptr);
-			flash_write(FirmwareFlashStart, formatBuffer, strlen(formatBuffer), 1);
+#if SAM4E || SAM4S || SAME70
 			// Start from bootloader next time
-			flash_clear_gpnvm(1);
-			cpu_irq_enable();
+			Flash::ClearGpNvm(1);
 #endif
 			// no reason to lock it again
 		}
@@ -1250,9 +1178,9 @@ void MessageF(const char *fmt, ...) noexcept
 	SafeVsnprintf(formatBuffer, ARRAY_SIZE(formatBuffer), fmt, vargs);
 	va_end(vargs);
 
-	SERIAL_AUX_DEVICE.print("{\"message\":\"");
-	SERIAL_AUX_DEVICE.print(formatBuffer);
-	SERIAL_AUX_DEVICE.print("\"}\n");
+	serialUart0.print("{\"message\":\"");
+	serialUart0.print(formatBuffer);
+	serialUart0.print("\"}\n");
 	delay_ms(10);
 }
 

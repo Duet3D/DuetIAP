@@ -9,14 +9,13 @@
 #define SRC_DEVICES_H_
 
 #include <Core.h>
+#include <AsyncSerial.h>
 
-#if SAME5x
-
-#include <Uart.h>
-
-extern Uart serialUart0;
+extern AsyncSerial serialUart0;
 
 void DeviceInit() noexcept;
+
+#if SAME5x
 
 // GCLK numbers not defined in the core
 static const unsigned int GclkNum90MHz = 5;		// for SDHC
