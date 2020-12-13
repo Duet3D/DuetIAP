@@ -106,8 +106,6 @@ bool haveDataInBuffer;
 const size_t reportPercentIncrement = 20;
 size_t reportNextPercent = reportPercentIncrement;
 
-char formatBuffer[100];
-
 void checkLed() noexcept
 {
 	const uint32_t now = millis();
@@ -932,7 +930,7 @@ void writeBinary()
 		debugPrintf("Erasing 0x%08x", flashPos);
 		if (retry != 0)
 		{
-			MessageF("Erase retry #%u", retry);
+			MessageF("Erase retry #%u at offset %08" PRIx32, retry, flashPos - IFLASH_ADDR);
 		}
 
 		{
@@ -1007,7 +1005,7 @@ void writeBinary()
 			debugPrintf("Writing 0x%08x - 0x%08x", flashPos, flashPos + pageSize - 1);
 			if (retry != 0)
 			{
-				MessageF("Flash write retry #%u", retry);
+				MessageF("Flash write retry #%u at address %08" PRIx32, retry, flashPos - IFLASH_ADDR);
 			}
 
 			const bool ok = Flash::Write(flashPos, pageSize, (uint8_t*)readData + bytesWritten);
@@ -1136,37 +1134,29 @@ void closeBinary() noexcept
 }
 #endif
 
-void Reset(bool success) noexcept
+[[noreturn]] void Reset(bool success) noexcept
 {
 	if (!success)
 	{
-		delay_ms(1500);				// give the user a chance to read the error message on PanelDue
-		// Only start from bootloader if the firmware couldn't be written entirely
+		delay_ms(2000);				// give the user a chance to read the error message on PanelDue
+#if SAM4E || SAM4S || SAME70
+		// Start from bootloader next time if the firmware couldn't be written entirely
 		if (state >= WritingUpgrade)
 		{
-			// If anything went wrong, write the last error message to Flash to the beginning
-			// of the Flash memory. That may help finding out what went wrong...
-			Flash::Unlock(FirmwareFlashStart, pageSize);
-			Flash::Write(FirmwareFlashStart, strlen(formatBuffer), (uint8_t*)formatBuffer);
-#if SAM4E || SAM4S || SAME70
-			// Start from bootloader next time
 			Flash::ClearGpNvm(1);
-#endif
-			// no reason to lock it again
 		}
+#endif
 	}
 
 #ifdef IAP_VIA_SPI
 	digitalWrite(SbcTfrReadyPin, false);
 #endif
 
-	delay_ms(500);									// allow last message to PanelDue to go
-
+	// No reason to lock the flash again
 	digitalWrite(DiagLedPin, !LedOnPolarity);		// turn the LED off
 
 	// Reboot
 	Reset();
-	while(true) { }
 }
 
 // Write message to PanelDue
@@ -1175,13 +1165,10 @@ void MessageF(const char *fmt, ...) noexcept
 {
 	va_list vargs;
 	va_start(vargs, fmt);
-	SafeVsnprintf(formatBuffer, ARRAY_SIZE(formatBuffer), fmt, vargs);
-	va_end(vargs);
-
 	serialUart0.print("{\"message\":\"");
-	serialUart0.print(formatBuffer);
+	serialUart0.printf(fmt, vargs);
 	serialUart0.print("\"}\n");
-	delay_ms(10);
+	va_end(vargs);
 }
 
 // The following functions are called by the startup code in CoreNG.

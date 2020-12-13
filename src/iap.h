@@ -22,8 +22,6 @@
 // IFLASH_ADDR and IFLASH_PAGE_SIZE are already defined for the SAM4E and the SAME70
 #endif
 
-const uint32_t UsbBaudRate = 115200;						// For USB diagnostics
-
 #if SAM4E	// Duet 2 Ethernet/WiFi
 # define USE_DMAC  1
 # define USE_XDMAC 0
@@ -31,15 +29,8 @@ const uint32_t UsbBaudRate = 115200;						// For USB diagnostics
 constexpr Pin DiagLedPin = PortCPin(2);
 constexpr bool LedOnPolarity = true;
 
-# ifndef IAP_VIA_SPI
-const size_t NumSdCards = 2;
-const Pin SdCardDetectPins[NumSdCards] = {53, NoPin};
-const Pin SdWriteProtectPins[NumSdCards] = {NoPin, NoPin};
-const Pin SdSpiCSPins[1] = {56};
-const char * const defaultFwFile = "0:/sys/DuetWiFiFirmware.bin";		// Which file shall we default to used for IAP?
-const char * const fwFilePrefix = "0:/sys/Duet";
+# ifdef IAP_VIA_SPI
 
-# else
 // SPI interface and pins
 #define SBC_SPI					SPI
 #define SBC_SPI_INTERFACE_ID	ID_SPI
@@ -57,6 +48,16 @@ const uint32_t SBC_SPI_RX_DMA_HW_ID = 2;
 constexpr Pin SbcTfrReadyPin = PortDPin(31);
 constexpr uint8_t DmacChanSbcTx = 1;				// These two should be
 constexpr uint8_t DmacChanSbcRx = 2;				// kept in sync with RRF!
+
+#else
+
+const size_t NumSdCards = 2;
+const Pin SdCardDetectPins[NumSdCards] = {53, NoPin};
+const Pin SdWriteProtectPins[NumSdCards] = {NoPin, NoPin};
+const Pin SdSpiCSPins[1] = {56};
+const char * const defaultFwFile = "0:/sys/Duet2Combinedirmware.bin";		// which file shall we default to used for IAP?
+const char * const fwFilePrefix = "0:/sys/Duet";
+
 # endif
 #endif
 
@@ -81,7 +82,7 @@ const size_t NumSdCards = 2;
 const Pin DiagLedPin = PortCPin(20);
 constexpr bool LedOnPolarity = true;
 
-# if defined(IAP_VIA_SPI)
+# ifdef IAP_VIA_SPI
 
 const uint32_t SBC_SPI_TX_PERID = 3;
 const uint32_t SBC_SPI_RX_PERID = 4;
@@ -103,7 +104,7 @@ constexpr Pin SbcTfrReadyPin = PortEPin(2);
 
 # else
 
-const char * const defaultFwFile = "0:/sys/Duet3Firmware.bin";			// Which file shall we default to used for IAP?
+const char * const defaultFwFile = "0:/sys/Duet3Firmware_MB6HC.bin";			// which file shall we default to used for IAP?
 const char * const fwFilePrefix = "0:/sys/Duet3";
 
 const Pin SdCardDetectPins[NumSdCards] = { PortAPin(6), NoPin };
@@ -134,7 +135,7 @@ const size_t NumSdCards = 1;
 const Pin DiagLedPin = PortAPin(31);
 constexpr bool LedOnPolarity = false;
 
-# if defined(IAP_VIA_SPI)
+# ifdef IAP_VIA_SPI
 
 #  define SBC_SPI_HANDLER SERCOM0_3_Handler
 #  define USE_32BIT_TRANSFERS 1
@@ -166,27 +167,14 @@ const Pin SdSpiCSPins[1] = { NoPin };
 # endif
 #endif	// SAME70
 
-#ifdef IAP_IN_RAM
-
-# if SAME5x
+#if SAME5x
 const uint32_t BootloaderSize = 0x4000;									// we have a 16K USB bootloader
 const uint32_t FirmwareFlashStart = FLASH_ADDR + BootloaderSize;
 const uint32_t FirmwareFlashEnd = FLASH_ADDR + FLASH_SIZE - (16 * 1024);	// allow 16K for SMART EEPROM
-# else
+const uint32_t IFLASH_ADDR = FLASH_ADDR;								// define this so that error message print can print the offset
+#else
 const uint32_t FirmwareFlashStart = IFLASH_ADDR;
 const uint32_t FirmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE;
-# endif
-
-#else
-
-# if SAME70
-const uint32_t iapFirmwareSize = 0x20000;								// 128 KiB max (SAME70 has 128kb flash sectors so we can't erase a smaller amount)
-# else
-const uint32_t iapFirmwareSize = 0x10000;								// 64 KiB max
-# endif
-const uint32_t FirmwareFlashStart = IFLASH_ADDR;
-const uint32_t FirmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE - iapFirmwareSize;
-
 #endif
 
 #ifdef IAP_VIA_SPI
@@ -201,12 +189,18 @@ struct FlashVerifyRequest
 	uint16_t crc16;
 	uint16_t dummy;
 };
+
+#else
+
+void initFilesystem();
+void getFirmwareFileName();
+void openBinary();
+void closeBinary();
+
 #endif
 
 // Read and write only 2 KiB of data at once (must be multiple of IFLASH_PAGE_SIZE).
-// Unfortunately we cannot increase this value further, because f_read() would mess up data
 const size_t blockReadSize = 2048;
-
 const size_t maxRetries = 5;											// Allow 5 retries max if anything goes wrong
 
 enum ProcessState
@@ -225,14 +219,7 @@ enum ProcessState
 #endif
 };
 
-#ifndef IAP_VIA_SPI
-void initFilesystem();
-void getFirmwareFileName();
-void openBinary();
-void closeBinary();
-#endif
-
 void writeBinary();
-void Reset(bool success);
+[[noreturn]] void Reset(bool success);
 
 #endif	// IAP_H_INCLUDED
