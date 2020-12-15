@@ -155,7 +155,7 @@ void AppMain() noexcept
 	CoreInit();
 	DeviceInit();
 
-	// Initialise systick (needed for delay calls) - CoreNG initialises it in non-interrupt mode
+	// Initialise systick (needed for delay calls) - CoreN2G initialises it in non-interrupt mode
 	SysTick->LOAD = ((SystemCoreClockFreq/1000) - 1) << SysTick_LOAD_RELOAD_Pos;
 	SysTick->CTRL = (1 << SysTick_CTRL_ENABLE_Pos) | (1 << SysTick_CTRL_TICKINT_Pos) | (1 << SysTick_CTRL_CLKSOURCE_Pos);
 	NVIC_SetPriority (SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL); /* set Priority for Systick Interrupt */
@@ -182,10 +182,10 @@ void AppMain() noexcept
 	hri_sercomspi_write_CTRLC_reg(SbcSpiSercom, 0);
 #  endif
 # else
-	SetPinFunction(APIN_SBC_SPI_MOSI, GpioPinFunction::A);
-	SetPinFunction(APIN_SBC_SPI_MISO, GpioPinFunction::A);
-	SetPinFunction(APIN_SBC_SPI_SCK, GpioPinFunction::A);
-	SetPinFunction(APIN_SBC_SPI_SS0, GpioPinFunction::A);
+	SetPinFunction(APIN_SBC_SPI_MOSI, SpiPinsFunction);
+	SetPinFunction(APIN_SBC_SPI_MISO, SpiPinsFunction);
+	SetPinFunction(APIN_SBC_SPI_SCK, SpiPinsFunction);
+	SetPinFunction(APIN_SBC_SPI_SS0, SpiPinsFunction);
 
 	spi_enable_clock(SBC_SPI);
 	spi_disable(SBC_SPI);

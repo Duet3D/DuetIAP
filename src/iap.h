@@ -36,25 +36,28 @@ constexpr bool LedOnPolarity = true;
 #define SBC_SPI_INTERFACE_ID	ID_SPI
 #define SBC_SPI_IRQn			SPI_IRQn
 #define SBC_SPI_HANDLER			SPI_Handler
+
 constexpr Pin APIN_SBC_SPI_MOSI = PortAPin(13);
 constexpr Pin APIN_SBC_SPI_MISO = PortAPin(12);
 constexpr Pin APIN_SBC_SPI_SCK  = PortAPin(14);
 constexpr Pin APIN_SBC_SPI_SS0  = PortAPin(11);
+constexpr GpioPinFunction SpiPinsFunction = GpioPinFunction::A;
+
+constexpr Pin SbcTfrReadyPin = PortDPin(31);
 
 // Hardware IDs of the SPI transmit and receive DMA interfaces. See atsam datasheet.
 const uint32_t SBC_SPI_TX_DMA_HW_ID = 1;
 const uint32_t SBC_SPI_RX_DMA_HW_ID = 2;
 
-constexpr Pin SbcTfrReadyPin = PortDPin(31);
 constexpr uint8_t DmacChanSbcTx = 1;				// These two should be
 constexpr uint8_t DmacChanSbcRx = 2;				// kept in sync with RRF!
 
 #else
 
 const size_t NumSdCards = 2;
-const Pin SdCardDetectPins[NumSdCards] = {53, NoPin};
-const Pin SdWriteProtectPins[NumSdCards] = {NoPin, NoPin};
-const Pin SdSpiCSPins[1] = {56};
+const Pin SdCardDetectPins[NumSdCards] = { PortCPin(21), NoPin };
+const Pin SdWriteProtectPins[NumSdCards] = { NoPin, NoPin };
+const Pin SdSpiCSPins[1] = { PortCPin(24) };
 const char * const defaultFwFile = "0:/sys/Duet2Combinedirmware.bin";		// which file shall we default to used for IAP?
 const char * const fwFilePrefix = "0:/sys/Duet";
 
@@ -64,10 +67,10 @@ const char * const fwFilePrefix = "0:/sys/Duet";
 #if SAM4S	// Duet 2 Maestro
 # define USE_DMAC_MANAGER 0
 const size_t NumSdCards = 2;
-const Pin SdCardDetectPins[NumSdCards] = {44, NoPin};
-const Pin SdWriteProtectPins[NumSdCards] = {NoPin, NoPin};
-const Pin SdSpiCSPins[1] = {56};
-const Pin DiagLedPin = 62;
+const Pin SdCardDetectPins[NumSdCards] = { PortCPin(8), NoPin };
+const Pin SdWriteProtectPins[NumSdCards] = { NoPin, NoPin };
+const Pin SdSpiCSPins[1] = { PortBPin(13) };
+const Pin DiagLedPin = PortCPin(26);
 constexpr bool LedOnPolarity = true;
 
 const char * const defaultFwFile = "0:/sys/DuetMaestroFirmware.bin";	// Which file shall we default to used for IAP?
@@ -99,6 +102,7 @@ constexpr Pin APIN_SBC_SPI_MOSI = PortCPin(27);
 constexpr Pin APIN_SBC_SPI_MISO = PortCPin(26);
 constexpr Pin APIN_SBC_SPI_SCK = PortCPin(24);
 constexpr Pin APIN_SBC_SPI_SS0 = PortCPin(25);
+constexpr GpioPinFunction SpiPinsFunction = GpioPinFunction::C;
 
 constexpr Pin SbcTfrReadyPin = PortEPin(2);
 
