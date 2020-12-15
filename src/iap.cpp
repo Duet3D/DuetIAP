@@ -1008,7 +1008,7 @@ void writeBinary()
 				MessageF("Flash write retry #%u at address %08" PRIx32, retry, flashPos - IFLASH_ADDR);
 			}
 
-			const bool ok = Flash::Write(flashPos, pageSize, (uint8_t*)readData + bytesWritten);
+			const bool ok = Flash::Write(flashPos, pageSize, reinterpret_cast<const uint32_t *>(readData) + bytesWritten/4);
 			if (!ok)
 			{
 				++retry;
