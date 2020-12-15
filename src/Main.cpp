@@ -79,4 +79,22 @@ uint32_t AppGetSdhcClockSpeed() noexcept
 
 #endif
 
+// syscalls.h must be included by exactly one .cpp file in the project
+#include <syscalls.h>
+
+[[noreturn]] void OutOfMemoryHandler() noexcept
+{
+	while (true) { }
+}
+
+extern "C" [[noreturn]] void __cxa_pure_virtual() noexcept
+{
+	while (true) { }
+}
+
+extern "C" [[noreturn]] void __cxa_deleted_virtual() noexcept
+{
+	while (true) { }
+}
+
 // End

@@ -101,7 +101,7 @@ constexpr auto Serial0PinFunction = GpioPinFunction::A;
 
 constexpr Pin HcmciMclkPin = PortAPin(29);
 constexpr auto HsmciMclkPinFunction = GpioPinFunction::C;
-constexpr Pin HsmciOtherPins[] = { PortAPin(26), PortAPin(27), PortAPin(28), PortAPin(20), PortAPin(31) };
+constexpr Pin HsmciOtherPins[] = { PortAPin(26), PortAPin(27), PortAPin(28), PortAPin(30), PortAPin(31) };
 constexpr auto HsmciOtherkPinsFunction = GpioPinFunction::C;
 
 void UART0_Handler(void)
@@ -120,7 +120,7 @@ constexpr auto Serial0PinFunction = GpioPinFunction::A;
 
 constexpr Pin HcmciMclkPin = PortAPin(29);
 constexpr auto HsmciMclkPinFunction = GpioPinFunction::C;
-constexpr Pin HsmciOtherPins[] = { PortAPin(26), PortAPin(27), PortAPin(28), PortAPin(20), PortAPin(31) };
+constexpr Pin HsmciOtherPins[] = { PortAPin(26), PortAPin(27), PortAPin(28), PortAPin(30), PortAPin(31) };
 constexpr auto HsmciOtherkPinsFunction = GpioPinFunction::C;
 
 void UART1_Handler(void)
@@ -138,7 +138,7 @@ constexpr auto Serial0PinFunction = GpioPinFunction::C;
 
 constexpr Pin HcmciMclkPin = PortAPin(25);
 constexpr auto HsmciMclkPinFunction = GpioPinFunction::D;
-constexpr Pin HsmciOtherPins[] = { PortAPin(26), PortAPin(27), PortAPin(28), PortAPin(20), PortAPin(31) };
+constexpr Pin HsmciOtherPins[] = { PortAPin(26), PortAPin(27), PortAPin(28), PortAPin(30), PortAPin(31) };
 constexpr auto HsmciOtherkPinsFunction = GpioPinFunction::C;
 
 void UART2_Handler(void)

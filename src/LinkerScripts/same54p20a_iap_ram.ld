@@ -118,23 +118,11 @@ SECTIONS
         . = ALIGN(4);
         _ebss = . ;
         _ezero = .;
-    } > ram
-
-    . = ALIGN(4);
-    _end = . ;
-
-    /* .stack_dummy section doesn't contains any symbols. It is only
-       used for linker to calculate size of stack sections, and assign
-       values to stack symbols later */
-    .stack_dummy :
-    {
-        *(.stack*)
+		_end = . ;
     } > ram
 
     /* Set stack top to end of ram, and stack limit move down by
      * size of stack_dummy section */
     __StackTop = ORIGIN(ram) + LENGTH(ram) - 64;	/* the 64 is to make room for the firmware filename */
-    __StackLimit = __StackTop - SIZEOF(.stack_dummy);
-    PROVIDE(_sstack = __StackLimit);
     PROVIDE(_estack = __StackTop);
 }

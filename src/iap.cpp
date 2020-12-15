@@ -1171,20 +1171,6 @@ void MessageF(const char *fmt, ...) noexcept
 	va_end(vargs);
 }
 
-// The following functions are called by the startup code in CoreNG.
-// We define our own versions here to make the binary smaller, because we don't use the associated functionality.
-void AnalogInInit() noexcept
-{
-}
-
-extern "C" void TWI0_Handler() noexcept
-{
-}
-
-extern "C" void TWI1_Handler() noexcept
-{
-}
-
 // Cache hooks called from the ASF. These are dummy because we run with the cache disabled.
 extern "C" void CacheFlushBeforeDMAReceive(const volatile void *start, size_t length) noexcept { }
 extern "C" void CacheInvalidateAfterDMAReceive(const volatile void *start, size_t length) noexcept { }
