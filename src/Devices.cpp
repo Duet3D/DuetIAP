@@ -139,7 +139,7 @@ constexpr auto Serial0PinFunction = GpioPinFunction::C;
 constexpr Pin HcmciMclkPin = PortAPin(25);
 constexpr auto HsmciMclkPinFunction = GpioPinFunction::D;
 constexpr Pin HsmciOtherPins[] = { PortAPin(26), PortAPin(27), PortAPin(28), PortAPin(30), PortAPin(31) };
-constexpr auto HsmciOtherkPinsFunction = GpioPinFunction::C;
+constexpr auto HsmciOtherPinsFunction = GpioPinFunction::C;
 
 void UART2_Handler(void)
 {
@@ -160,7 +160,7 @@ void SdhcInit() noexcept
 	SetPinFunction(HcmciMclkPin, HsmciMclkPinFunction);
 	for (Pin p : HsmciOtherPins)
 	{
-		SetPinFunction(p, HsmciOtherkPinsFunction);
+		SetPinFunction(p, HsmciOtherPinsFunction);
 	}
 }
 
