@@ -127,7 +127,7 @@ void delay_ms(uint32_t ms) noexcept
 	} while (millis() - startTime < ms);
 }
 
-void MessageF(const char *fmt, ...) noexcept;			// forward declaration
+void MessageF(const char *fmt, ...) noexcept __attribute__ ((format (printf, 1, 2)));			// forward declaration
 
 #if defined(DEBUG) && DEBUG
 # define debugPrintf(...)		do { MessageF(__VA_ARGS__); } while (false)
