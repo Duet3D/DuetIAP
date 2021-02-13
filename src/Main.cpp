@@ -82,7 +82,7 @@ uint32_t AppGetSdhcClockSpeed() noexcept
 // syscalls.h must be included by exactly one .cpp file in the project
 #include <syscalls.h>
 
-void OutOfMemoryHandler() noexcept
+[[noreturn]] void OutOfMemoryHandler() noexcept
 {
 	while (true) { }
 }
