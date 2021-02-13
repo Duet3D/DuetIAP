@@ -59,7 +59,6 @@ const Pin SdCardDetectPins[NumSdCards] = { PortCPin(21), NoPin };
 const Pin SdWriteProtectPins[NumSdCards] = { NoPin, NoPin };
 const Pin SdSpiCSPins[1] = { PortCPin(24) };
 const char * const defaultFwFile = "0:/sys/Duet2Combinedirmware.bin";		// which file shall we default to used for IAP?
-const char * const fwFilePrefix = "0:/sys/Duet";
 
 # endif
 #endif
@@ -74,7 +73,6 @@ const Pin DiagLedPin = PortCPin(26);
 constexpr bool LedOnPolarity = true;
 
 const char * const defaultFwFile = "0:/sys/DuetMaestroFirmware.bin";	// Which file shall we default to used for IAP?
-const char * const fwFilePrefix = "0:/sys/Duet";
 #endif
 
 #if SAME70	// Duet 3
@@ -109,7 +107,6 @@ constexpr Pin SbcTfrReadyPin = PortEPin(2);
 # else
 
 const char * const defaultFwFile = "0:/sys/Duet3Firmware_MB6HC.bin";			// which file shall we default to used for IAP?
-const char * const fwFilePrefix = "0:/sys/Duet3";
 
 const Pin SdCardDetectPins[NumSdCards] = { PortAPin(6), NoPin };
 const Pin SdWriteProtectPins[NumSdCards] = { NoPin, NoPin };
@@ -162,7 +159,6 @@ constexpr DmaPriority DmacPrioSbc = 3;					// high speed SPI in slave mode
 # else
 
 const char * const defaultFwFile = "0:/sys/Duet3Firmware_Mini5plus.uf2";	// which file shall we default to used for IAP?
-const char * const fwFilePrefix = "0:/sys/Duet3";
 
 const Pin SdCardDetectPins[NumSdCards] = { PortBPin(16) };
 const Pin SdWriteProtectPins[NumSdCards] = { NoPin };
@@ -195,6 +191,8 @@ struct FlashVerifyRequest
 };
 
 #else
+
+const char * const fwFilePrefix = "0:/";								// we expect this at the start of a firmware file name
 
 void initFilesystem();
 void getFirmwareFileName();
