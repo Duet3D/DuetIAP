@@ -152,7 +152,7 @@ void SerialInit() noexcept
 {
 	SetPinFunction(APIN_Serial0_RXD, Serial0PinFunction);
 	SetPinFunction(APIN_Serial0_TXD, Serial0PinFunction);
-	SetPullup(APIN_Serial0_RXD, true);
+	EnablePullup(APIN_Serial0_RXD);
 }
 
 void SdhcInit() noexcept

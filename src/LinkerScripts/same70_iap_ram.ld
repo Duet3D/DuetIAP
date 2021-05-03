@@ -107,6 +107,16 @@ SECTIONS
     _erelocate = .;
 	_firmware_crc = .;
 
+  	.ram_nocache (NOLOAD) :
+	{
+        . = ALIGN(4);
+        _szero_nocache = .;
+		*(.CanMessage .CanMessage.*)
+		*(.ram_nocache .ram_nocache.*)
+        . = ALIGN(4);
+        _ezero_nocache = .;
+ 	} > ram
+	
     /* .bss section which is used for uninitialized data */
     .bss (NOLOAD) :
     {
@@ -118,8 +128,6 @@ SECTIONS
         . = ALIGN(4);
         _ebss = . ;
         _ezero = .;
-		_szero_nocache = .;
-		_ezero_nocache = .;
 		_end = . ;
     } > ram
 
@@ -127,4 +135,7 @@ SECTIONS
      * size of stack_dummy section */
     __StackTop = ORIGIN(ram) + LENGTH(ram) - 64;	/* the 64 is to make room for the firmware filename */
     PROVIDE(_estack = __StackTop);
+
+	PROVIDE(_nocache_ram_start = _szero_nocache);
+	PROVIDE(_nocache_ram_end = _ezero_nocache);
 }

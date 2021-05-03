@@ -1171,9 +1171,11 @@ void MessageF(const char *fmt, ...) noexcept
 	va_end(vargs);
 }
 
-// Cache hooks called from the ASF. These are dummy because we run with the cache disabled.
-extern "C" void CacheFlushBeforeDMAReceive(const volatile void *start, size_t length) noexcept { }
-extern "C" void CacheInvalidateAfterDMAReceive(const volatile void *start, size_t length) noexcept { }
-extern "C" void CacheFlushBeforeDMASend(const volatile void *start, size_t length) noexcept { }
+#if SAME70
+
+// Dummy assertion handler, called by the Cache module in CoreN2G
+extern "C" [[noreturn]] void vAssertCalled(uint32_t line, const char *file) noexcept { while (true) { } }
+
+#endif
 
 // End
