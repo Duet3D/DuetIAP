@@ -120,6 +120,10 @@ const Pin SdSpiCSPins[1] = { NoPin };
 # define USE_XDMAC 			0
 # define USE_DMAC_MANAGER	1
 
+// Magic address and value to launch the uf2 bootloader on failure, see inc/uf2.h in uf2-samdx1 repository
+# define DBL_TAP_PTR ((volatile uint32_t *)(HSRAM_ADDR + HSRAM_SIZE - 4))
+# define DBL_TAP_MAGIC 0xf01669ef // Randomly selected, adjusted to have first and last bit set
+
 // Serial on IO0
 constexpr uint8_t Serial0SercomNumber = 2;
 constexpr uint8_t Sercom0RxPad = 1;

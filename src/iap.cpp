@@ -1098,7 +1098,13 @@ void writeBinary()
 		{
 			// Attempt to flash the firmware again
 			flashPos = FirmwareFlashStart;
+#if SAME70
+			// For some reason the SAME70 fails to boot *with a valid firmware image* after a page has been rewritten.
+			// So we must erase the entire chip again and then reflash everything page by page. This lets the SAM boot as expected
+			state = ErasingFlash;
+#else
 			state = WritingUpgrade;
+#endif
 			reportNextPercent = reportPercentIncrement;
 			retry = 0;
 		}
@@ -1108,10 +1114,9 @@ void writeBinary()
 	case LockingFlash:
 		// Lock each single page again
 		{
-			debugPrintf("Locking 0x%08x - 0x%08x", flashPos, flashPos + pageSize - 1);
-
 			// We can lock all the flash in one call. We may have to unlock from before the firmware start.
 			const uint32_t lockStart = FirmwareFlashStart & ~(Flash::GetLockRegionSize() - 1);
+			debugPrintf("Locking 0x%08x - 0x%08x", lockStart, FirmwareFlashEnd - lockStart);
 			if (Flash::Lock(lockStart, FirmwareFlashEnd - lockStart))
 			{
 				MessageF("Update successful! Rebooting...");
@@ -1145,6 +1150,9 @@ void closeBinary() noexcept
 		{
 			Flash::ClearGpNvm(1);
 		}
+#elif SAME5x
+		// Start from uf2 bootloader next time. This pretends the reset button has been pressed twice in short succession
+		*DBL_TAP_PTR = DBL_TAP_MAGIC;
 #endif
 	}
 
