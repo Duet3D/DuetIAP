@@ -84,7 +84,6 @@ bool isUf2File;
 
 #endif
 
-#if SAME5x
 // CoreN2G requires a version string
 extern const char VersionText[] =
 # ifdef IAP_VIA_SPI
@@ -92,7 +91,6 @@ extern const char VersionText[] =
 # else
 	"In-application programmer (SD version) version " VERSION_TEXT;
 # endif
-#endif
 
 alignas(4) char readData[blockReadSize];	// use aligned memory so DMA works well
 
