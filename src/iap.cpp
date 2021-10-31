@@ -1164,7 +1164,7 @@ void closeBinary() noexcept
 	digitalWrite(DiagLedPin, !LedOnPolarity);		// turn the LED off
 
 	// Reboot
-	Reset();
+	ResetProcessor();
 }
 
 // Write message to PanelDue
