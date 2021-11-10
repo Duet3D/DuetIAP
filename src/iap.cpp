@@ -1172,7 +1172,7 @@ void MessageF(const char *fmt, ...) noexcept
 	va_list vargs;
 	va_start(vargs, fmt);
 	serialUart0.print("{\"message\":\"");
-	serialUart0.printf(fmt, vargs);
+	serialUart0.vprintf(fmt, vargs);
 	serialUart0.print("\"}\n");
 	va_end(vargs);
 }
