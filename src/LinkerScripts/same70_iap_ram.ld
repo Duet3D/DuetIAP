@@ -113,7 +113,7 @@ SECTIONS
         _szero_nocache = .;
 		*(.CanMessage .CanMessage.*)
 		*(.ram_nocache .ram_nocache.*)
-        . = ALIGN(4);
+        . = ALIGN(8);
         _ezero_nocache = .;
  	} > ram
 	

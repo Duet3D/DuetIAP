@@ -99,10 +99,10 @@ const uint8_t DmacChanSbcTx = 5;				// These two should be
 const uint8_t DmacChanSbcRx = 6;				// kept in sync with RRF!
 
 // Duet pin numbers for the SBC interface
-#define SBC_SPI					SPI1
-#define SBC_SPI_INTERFACE_ID	ID_SPI1
-#define SBC_SPI_IRQn			SPI1_IRQn
-#define SBC_SPI_HANDLER			SPI1_Handler
+#  define SBC_SPI				SPI1
+#  define SBC_SPI_INTERFACE_ID	ID_SPI1
+#  define SBC_SPI_IRQn			SPI1_IRQn
+#  define SBC_SPI_HANDLER		SPI1_Handler
 
 constexpr Pin APIN_SBC_SPI_MOSI = PortCPin(27);
 constexpr Pin APIN_SBC_SPI_MISO = PortCPin(26);
@@ -116,11 +116,11 @@ constexpr Pin SbcTfrReadyPin = PortEPin(2);
 
 #  if defined(DUET3_MB6HC)
 const char * const defaultFwFile = "0:/firmware/Duet3Firmware_MB6HC.bin";			// which file shall we default to used for IAP?
-# elif defined(DUET3_MB6XD)
+#  elif defined(DUET3_MB6XD)
 const char * const defaultFwFile = "0:/firmware/Duet3Firmware_MB6XD.bin";			// which file shall we default to used for IAP?
-# else
-#  error Unknown board
-# endif
+#  else
+#   error Unknown board
+#  endif
 
 const Pin SdCardDetectPins[NumSdCards] = { PortAPin(6), NoPin };
 const Pin SdWriteProtectPins[NumSdCards] = { NoPin, NoPin };
@@ -129,7 +129,7 @@ const Pin SdSpiCSPins[1] = { NoPin };
 # endif
 #endif	// SAME70
 
-#if SAME5x	// Duet 3 Mini
+#if SAME5x	// Duet 3 Mini or FMDC
 # define USE_DMAC 			0
 # define USE_XDMAC 			0
 # define USE_DMAC_MANAGER	1
@@ -139,16 +139,37 @@ const Pin SdSpiCSPins[1] = { NoPin };
 # define DBL_TAP_MAGIC 0xf01669ef // Randomly selected, adjusted to have first and last bit set
 
 // Serial on IO0
+
+# if defined(FMDC)
+
+// These happen to be the same as for the Duet 3 Mini
 constexpr uint8_t Serial0SercomNumber = 2;
 constexpr uint8_t Sercom0RxPad = 1;
-#define SERIAL0_ISR0	SERCOM2_0_Handler
-#define SERIAL0_ISR1	SERCOM2_1_Handler
-#define SERIAL0_ISR2	SERCOM2_2_Handler
-#define SERIAL0_ISR3	SERCOM2_3_Handler
+# define SERIAL0_ISR0	SERCOM2_0_Handler
+# define SERIAL0_ISR1	SERCOM2_1_Handler
+# define SERIAL0_ISR2	SERCOM2_2_Handler
+# define SERIAL0_ISR3	SERCOM2_3_Handler
 
 constexpr Pin Serial0TxPin = PortBPin(25);
 constexpr Pin Serial0RxPin = PortBPin(24);
 constexpr GpioPinFunction Serial0PinFunction = GpioPinFunction::D;
+
+# elif defined(DUET3_MINI)
+
+constexpr uint8_t Serial0SercomNumber = 2;
+constexpr uint8_t Sercom0RxPad = 1;
+# define SERIAL0_ISR0	SERCOM2_0_Handler
+# define SERIAL0_ISR1	SERCOM2_1_Handler
+# define SERIAL0_ISR2	SERCOM2_2_Handler
+# define SERIAL0_ISR3	SERCOM2_3_Handler
+
+constexpr Pin Serial0TxPin = PortBPin(25);
+constexpr Pin Serial0RxPin = PortBPin(24);
+constexpr GpioPinFunction Serial0PinFunction = GpioPinFunction::D;
+
+# else
+#  error Unknown board
+# endif
 
 const size_t NumSdCards = 1;
 const Pin DiagLedPin = PortAPin(31);
@@ -162,9 +183,6 @@ constexpr unsigned int SbcSpiSercomNumber = 0;
 Sercom * const SbcSpiSercom = SERCOM0;
 constexpr IRQn SBC_SPI_IRQn = SERCOM0_3_IRQn;			// this is the SS Low interrupt, the only one we use
 
-//constexpr Pin SbcMosiPin = PortAPin(7);
-//constexpr Pin SbcMisoPin = PortAPin(4);
-//constexpr Pin SbcSclkPin = PortAPin(5);
 constexpr Pin SbcSSPin = PortAPin(6);
 constexpr Pin SbcTfrReadyPin = PortAPin(3);
 constexpr Pin SbcSpiSercomPins[] = { PortAPin(4), PortAPin(5), PortAPin(6), PortAPin(7) };
@@ -174,16 +192,41 @@ constexpr DmaChannel DmacChanSbcTx = 8;
 constexpr DmaChannel DmacChanSbcRx = 9;
 constexpr DmaPriority DmacPrioSbc = 3;					// high speed SPI in slave mode
 
+// The following are needed only so that the SD library files will compile.
+Sdhc * const SdhcDevice = SDHC1;
+constexpr IRQn_Type SdhcIRQn = SDHC1_IRQn;
+
 # else
 
+// Definitions for SD card version
+
+#  if defined(FMDC)
+
+const char * const defaultFwFile = "0:/firmware/Duet3Firmware_FMDC.uf2";	// which file shall we default to used for IAP?
+constexpr Pin SdCardDetectPins[NumSdCards] = { PortBPin(12) };
+constexpr Pin SdWriteProtectPins[NumSdCards] = { NoPin };
+constexpr Pin SdSpiCSPins[1] = { NoPin };
+constexpr Pin SdMciPins[] = { PortAPin(8), PortAPin(9), PortAPin(10), PortAPin(11), PortBPin(10), PortBPin(11) };
+constexpr GpioPinFunction SdMciPinsFunction = GpioPinFunction::I;
+Sdhc * const SdhcDevice = SDHC0;
+constexpr IRQn_Type SdhcIRQn = SDHC0_IRQn;
+
+#  elif defined(DUET3_MINI)
+
 const char * const defaultFwFile = "0:/firmware/Duet3Firmware_Mini5plus.uf2";	// which file shall we default to used for IAP?
+constexpr Pin SdCardDetectPins[NumSdCards] = { PortBPin(16) };
+constexpr Pin SdWriteProtectPins[NumSdCards] = { NoPin };
+constexpr Pin SdSpiCSPins[1] = { NoPin };
+constexpr Pin SdMciPins[] = { PortAPin(20), PortAPin(21), PortBPin(18), PortBPin(19), PortBPin(20), PortBPin(21) };
+constexpr GpioPinFunction SdMciPinsFunction = GpioPinFunction::I;
+Sdhc * const SdhcDevice = SDHC1;
+constexpr IRQn_Type SdhcIRQn = SDHC1_IRQn;
 
-const Pin SdCardDetectPins[NumSdCards] = { PortBPin(16) };
-const Pin SdWriteProtectPins[NumSdCards] = { NoPin };
-const Pin SdSpiCSPins[1] = { NoPin };
-
+#  else
+#   error Unknown board
+#  endif
 # endif
-#endif	// SAME70
+#endif	// SAME5x
 
 #if SAME5x
 const uint32_t BootloaderSize = 0x4000;									// we have a 16K USB bootloader

@@ -44,66 +44,23 @@
  * Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
  */
 
-#ifndef CONF_SD_MMC_H_INCLUDED
-#define CONF_SD_MMC_H_INCLUDED
+#ifndef SD_MMC_CONF_SD_MMC_H_INCLUDED
+#define SD_MMC_CONF_SD_MMC_H_INCLUDED
 
-// Define this to enable the SPI mode instead of Multimedia Card interface mode
-//#define SD_MMC_SPI_MODE
-
-// Define this to enable the SDIO support
-//#define SDIO_SUPPORT_ENABLE
-
-// Define this to enable the debug trace to the current standard output (stdio)
-//#define SD_MMC_DEBUG
-
-/*! \name board MCI SD/MMC slot template definition
- *
- * The GPIO and MCI/HSMCI connections of the SD/MMC Connector must be added
- * in board.h file.
- */
+// Include the version of this file for ASF to ensure we get consistent definitions, and to get the definition of CONF_HSMCI_XDMAC_CHANNEL
+#if SAM4E || SAM4S || SAME70
+# include <asf/conf_sd_mmc.h>
+#endif
 
 // SD card configuration for Duet and Duet WiFi
 #define SD_MMC_ENABLE
 
-#if defined(__RADDS__)
-
-#define SD_MMC_HSMCI_MEM_CNT		0			// Number of HSMCI card slots supported
-#define SD_MMC_SPI_MEM_CNT			2			// Number of SPI card slots supported
-
-#define SD_MMC_SPI_MAX_CLOCK		(4000000)	// Max 4MHz clock for SPI cards, to allow a reasonable cable length
-
-#define SD_MMC_WP_DETECT_VALUE		false
-
-#elif defined(__ALLIGATOR__)
-
-#define SD_MMC_HSMCI_MEM_CNT		0			// Number of HSMCI card slots supported
-#define SD_MMC_SPI_MEM_CNT			1			// Number of SPI card slots supported
-
-#define SD_MMC_SPI_MAX_CLOCK		(20000000)	// Max 20MHz clock for onboard SPI cards
-
-#define SD_MMC_WP_DETECT_VALUE		false
-
-#elif defined(DUET3_V06)
-
 #define SD_MMC_HSMCI_MEM_CNT		1			// Number of HSMCI card slots supported
 #define SD_MMC_HSMCI_SLOT_0_SIZE	4			// HSMCI bus width
 #define SD_MMC_SPI_MEM_CNT			0			// Number of SPI card slots supported
-
-#define SD_MMC_WP_DETECT_VALUE		false
-
-#else	// Duet 2, Maestro, Duet 3 Mini
-
-#define SD_MMC_HSMCI_MEM_CNT		1			// Number of HSMCI card slots supported
-#define SD_MMC_HSMCI_SLOT_0_SIZE	4			// HSMCI bus width
-#define SD_MMC_SPI_MEM_CNT			0			// Number of SPI card slots supported
-
-#define SD_MMC_SPI_MAX_CLOCK		(4000000)	// Max 4MHz clock for SPI cards, to allow a reasonable cable length
-
-#define SD_MMC_WP_DETECT_VALUE		false
-
-#endif
+#define SUPPORT_WRITE_PROTECT		0
 
 #define SD_MMC_MEM_CNT				(SD_MMC_HSMCI_MEM_CNT + SD_MMC_SPI_MEM_CNT)
 
-#endif /* CONF_SD_MMC_H_INCLUDED */
+#endif /* SD_MMC_CONF_SD_MMC_H_INCLUDED */
 
