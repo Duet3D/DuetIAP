@@ -63,6 +63,7 @@
 
 // Later Duets have a diagnostic LED, which we flash regularly to indicate activity
 const uint32_t LedOnOffMillis = 100;
+const uint32_t RetryMessageDelay = 200;			// milliseconds
 
 uint32_t lastLedMillis;
 bool ledIsOn;
@@ -848,6 +849,7 @@ bool ReadBlock()
 	if (retry != 0)
 	{
 		MessageF("Read file retry #%u", retry);
+		delay_ms(RetryMessageDelay);
 	}
 
 	if (isUf2File)
@@ -929,6 +931,7 @@ void writeBinary()
 		if (retry != 0)
 		{
 			MessageF("Erase retry #%u at offset %08" PRIx32, retry, flashPos - IFLASH_ADDR);
+			delay_ms(RetryMessageDelay);
 		}
 
 		{
@@ -1000,14 +1003,17 @@ void writeBinary()
 
 		// Write another page
 		{
+			static bool writeSuceeded = false;			// static so that the retry message can say whether the write or the verify failed
+
 			debugPrintf("Writing 0x%08x - 0x%08x", flashPos, flashPos + pageSize - 1);
 			if (retry != 0)
 			{
-				MessageF("Flash write retry #%u at address %08" PRIx32, retry, flashPos - IFLASH_ADDR);
+				MessageF("Flash write%s retry #%u at address %08" PRIx32, ((writeSuceeded) ? "/verify" : ""), retry, flashPos - IFLASH_ADDR);
+				delay_ms(RetryMessageDelay);
 			}
 
-			const bool ok = Flash::Write(flashPos, pageSize, reinterpret_cast<const uint32_t *>(readData) + bytesWritten/4);
-			if (!ok)
+			writeSuceeded = Flash::Write(flashPos, pageSize, reinterpret_cast<const uint32_t *>(readData) + bytesWritten/4);
+			if (!writeSuceeded)
 			{
 				++retry;
 				break;
@@ -1076,6 +1082,7 @@ void writeBinary()
 		{
 			// Although this is not expected, the firmware has been written successfully so just continue as normal
 			MessageF("Timeout while exchanging checksum acknowledgement");
+			delay_ms(RetryMessageDelay);
 			state = LockingFlash;
 		}
 		else if (is_spi_transfer_complete())
