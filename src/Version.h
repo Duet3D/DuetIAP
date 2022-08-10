@@ -8,6 +8,7 @@
 #ifndef SRC_VERSION_H_
 #define SRC_VERSION_H_
 
-#define VERSION_TEXT	"1.0 (2020-10-16b1)"
+// Note: the complete VERSION string must be in standard version number format and must not contain spaces! This is so that DWC can parse it.
+#define VERSION_TEXT	"3.4_2021-09-28"
 
 #endif /* SRC_VERSION_H_ */

@@ -10,19 +10,27 @@
 
 #if SAME5x
 
-#include "iap.h"
-#include <Uart.h>
-#include <peripheral_clk_config.h>
-#include <hri_oscctrl_e54.h>
-#include <hri_gclk_e54.h>
+# include <peripheral_clk_config.h>
+# include <hri_oscctrl_e54.h>
+# include <hri_gclk_e54.h>
 
-// Program entry point
+constexpr uint32_t Dpll1Multiplier = 72;								// this multiplies the 2.5MHz reference to get the PLL output frequency
+constexpr uint32_t Dpll1Frequency = Dpll1Multiplier * 2500000;			// the PLL output frequency
+constexpr uint32_t SdhcClockFreq = Dpll1Frequency/2;					// clock frequency to the SDHC peripheral
+constexpr uint32_t MaxSdCardClockFreq = SdhcClockFreq/2;				// maximum SD card clock frequency
+static_assert(MaxSdCardClockFreq <= 50000000, "SD clock frequency too high");
+
+#endif
+
+// Program initialisation
 void AppInit() noexcept
 {
-	// Initialise FDPLL1. (25MHz / 10) * 72 = 180MHz which we will divide by 2 to get 90MHz.
+#if SAME5x
+
+	// Initialise FDPLL1
 	hri_oscctrl_write_DPLLRATIO_reg(OSCCTRL, 1,
 			  OSCCTRL_DPLLRATIO_LDRFRAC(0)
-			| OSCCTRL_DPLLRATIO_LDR(71));
+			| OSCCTRL_DPLLRATIO_LDR(Dpll1Multiplier - 1));
 	hri_oscctrl_write_DPLLCTRLB_reg(OSCCTRL, 1,
 			  OSCCTRL_DPLLCTRLB_DIV(4)
 			| (0 << OSCCTRL_DPLLCTRLB_DCOEN_Pos)
@@ -46,7 +54,10 @@ void AppInit() noexcept
 			| (0 << GCLK_GENCTRL_DIVSEL_Pos) | (0 << GCLK_GENCTRL_OE_Pos)
 			| (0 << GCLK_GENCTRL_OOV_Pos) | (0 << GCLK_GENCTRL_IDC_Pos)
 			| GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_DPLL1);
+#endif
 }
+
+#if SAME5x
 
 // Return the XOSC frequency in MHz
 unsigned int AppGetXoscFrequency() noexcept
@@ -63,9 +74,27 @@ unsigned int AppGetXoscNumber() noexcept
 // Return get the SDHC peripheral clock speed in Hz. This must be provided by the client project if using SDHC.
 uint32_t AppGetSdhcClockSpeed() noexcept
 {
-	return 90000000;
+	return SdhcClockFreq;
 }
 
 #endif
+
+// syscalls.h must be included by exactly one .cpp file in the project
+#include <syscalls.h>
+
+[[noreturn]] void OutOfMemoryHandler() noexcept
+{
+	while (true) { }
+}
+
+extern "C" [[noreturn]] void __cxa_pure_virtual() noexcept
+{
+	while (true) { }
+}
+
+extern "C" [[noreturn]] void __cxa_deleted_virtual() noexcept
+{
+	while (true) { }
+}
 
 // End

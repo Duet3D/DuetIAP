@@ -2,18 +2,13 @@
 .settings/
 
 # Output folders
-/SAM3X_Release/
-/SAM4E_Release/
-/SAME70XPLD/
-/Alligator/
-/Duet3/
-/RADDS/
-/SAM4S_Release/
-/Duet3_RAM/
-/Duet3_SPI/
-/Duet3_SPI_RAM/
+/Duet3MB6HC_RAM/
+/Duet3MB6HC_SPI_RAM/
+/Duet3MB6XD_RAM/
+/Duet3MB6XD_SPI_RAM/
 /SAM4E_RAM/
 /SAM4E_SPI_RAM/
 /SAM4S_RAM/
 /Duet3Mini_SD_RAM/
 /Duet3Mini_SPI_RAM/
+/FMDC_SD/

@@ -35,8 +35,8 @@ SEARCH_DIR(.)
 MEMORY
 {
 	/* This file is for IAP binaries that load into the last 32kb of RAM */
-	code_ram (rx) : ORIGIN = 0x20038000, LENGTH = 0x00008000
-	ram (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00038000
+	code_ram (rx) : ORIGIN = 0x20028000, LENGTH = 0x00008000
+	ram (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00028000
 }
 
 /* Section Definitions */

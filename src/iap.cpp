@@ -12,12 +12,11 @@
  */
 
 #include "iap.h"
+#include "Devices.h"
 #include "Version.h"
 
 #if SAME5x
-# include "Devices.h"
 # include <hri_sercom_e54.h>
-# define SERIAL_AUX_DEVICE (serialUart0)
 #endif
 
 #include <Flash.h>
@@ -35,26 +34,36 @@
 
 #define DEBUG	0
 
+#if SAM4E || SAM4S || SAME70
+# include <asf/sam/drivers/pmc/pmc.h>
+#endif
+
 #if SAM4E || SAM4S || SAME70 || SAME5x
 
 # ifdef IAP_VIA_SPI
 
+# if SAM4E || SAME70
+# include <asf/sam/drivers/spi/spi.h>
+# endif
+
 # if USE_DMAC
-# include "dmac/dmac.h"
-# include "matrix/matrix.h"
+# include <asf/sam/drivers/dmac/dmac.h>
+# include <asf/sam/drivers/matrix/matrix.h>
 # endif
 
 # if USE_XDMAC
-# include "xdmac/xdmac.h"
+# include <asf/sam/drivers/xdmac/xdmac.h>
 # endif
 
 # if USE_DMAC_MANAGER
 # include <DmacManager.h>
 # endif
+
 #endif // IAP_VIA_SPI
 
 // Later Duets have a diagnostic LED, which we flash regularly to indicate activity
 const uint32_t LedOnOffMillis = 100;
+const uint32_t RetryMessageDelay = 200;			// milliseconds
 
 uint32_t lastLedMillis;
 bool ledIsOn;
@@ -76,7 +85,6 @@ bool isUf2File;
 
 #endif
 
-#if SAME5x
 // CoreN2G requires a version string
 extern const char VersionText[] =
 # ifdef IAP_VIA_SPI
@@ -84,7 +92,6 @@ extern const char VersionText[] =
 # else
 	"In-application programmer (SD version) version " VERSION_TEXT;
 # endif
-#endif
 
 alignas(4) char readData[blockReadSize];	// use aligned memory so DMA works well
 
@@ -97,8 +104,6 @@ size_t bytesRead, bytesWritten;
 bool haveDataInBuffer;
 const size_t reportPercentIncrement = 20;
 size_t reportNextPercent = reportPercentIncrement;
-
-char formatBuffer[100];
 
 void checkLed() noexcept
 {
@@ -121,7 +126,7 @@ void delay_ms(uint32_t ms) noexcept
 	} while (millis() - startTime < ms);
 }
 
-void MessageF(const char *fmt, ...) noexcept;			// forward declaration
+void MessageF(const char *fmt, ...) noexcept __attribute__ ((format (printf, 1, 2)));			// forward declaration
 
 #if defined(DEBUG) && DEBUG
 # define debugPrintf(...)		do { MessageF(__VA_ARGS__); } while (false)
@@ -134,37 +139,25 @@ extern "C" void UrgentInit() noexcept { }
 extern "C" void SysTick_Handler(void) noexcept
 {
 	CoreSysTick();
-#if SAME5x
 	WatchdogReset();
-#else
-	wdt_restart(WDT);							// kick the watchdog
-#endif
 
 #if SAM4E || SAME70
-	rswdt_restart(RSWDT);						// kick the secondary watchdog
+	WatchdogResetSecondary();
 #endif
 }
 
 extern "C" void SVC_Handler() noexcept { for (;;) {} }
 extern "C" void PendSV_Handler() noexcept { for (;;) {} }
 
-#if SAME5x		// if using CoreN2G
 void AppMain() noexcept
-#else
-extern "C" void AppMain() noexcept
-#endif
 {
-#if SAME5x
 	CoreInit();
 	DeviceInit();
 
-	// Initialise systick (needed for delay calls) - CoreNG initialises it in non-interrupt mode
+	// Initialise systick (needed for delay calls) - CoreN2G initialises it in non-interrupt mode
 	SysTick->LOAD = ((SystemCoreClockFreq/1000) - 1) << SysTick_LOAD_RELOAD_Pos;
 	SysTick->CTRL = (1 << SysTick_CTRL_ENABLE_Pos) | (1 << SysTick_CTRL_TICKINT_Pos) | (1 << SysTick_CTRL_CLKSOURCE_Pos);
 	NVIC_SetPriority (SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL); /* set Priority for Systick Interrupt */
-#else
-	SysTickInit();
-#endif
 
 #ifdef IAP_VIA_SPI
 	pinMode(SbcTfrReadyPin, OUTPUT_LOW);
@@ -188,10 +181,10 @@ extern "C" void AppMain() noexcept
 	hri_sercomspi_write_CTRLC_reg(SbcSpiSercom, 0);
 #  endif
 # else
-	ConfigurePin(APIN_SBC_SPI_MOSI);
-	ConfigurePin(APIN_SBC_SPI_MISO);
-	ConfigurePin(APIN_SBC_SPI_SCK);
-	ConfigurePin(APIN_SBC_SPI_SS0);
+	SetPinFunction(APIN_SBC_SPI_MOSI, SpiPinsFunction);
+	SetPinFunction(APIN_SBC_SPI_MISO, SpiPinsFunction);
+	SetPinFunction(APIN_SBC_SPI_SCK, SpiPinsFunction);
+	SetPinFunction(APIN_SBC_SPI_SS0, SpiPinsFunction);
 
 	spi_enable_clock(SBC_SPI);
 	spi_disable(SBC_SPI);
@@ -224,7 +217,7 @@ extern "C" void AppMain() noexcept
 	ledIsOn = true;
 	lastLedMillis = millis();
 
-	SERIAL_AUX_DEVICE.begin(57600);				// set serial port to default PanelDue baud rate
+	serialUart0.begin(57600);				// set serial port to default PanelDue baud rate
 	MessageF("IAP started");
 
 #if SAME5x
@@ -856,6 +849,7 @@ bool ReadBlock()
 	if (retry != 0)
 	{
 		MessageF("Read file retry #%u", retry);
+		delay_ms(RetryMessageDelay);
 	}
 
 	if (isUf2File)
@@ -917,7 +911,6 @@ void writeBinary()
 		{
 			debugPrintf("Unlocking 0x%08x - 0x%08x", flashPos, flashPos + pageSize - 1);
 
-# if SAME5x
 			// We can unlock all the flash in one call. We may have to unlock from before the firmware start. The bootloader is protected separately.
 			const uint32_t unlockStart = FirmwareFlashStart & ~(Flash::GetLockRegionSize() - 1);
 			if (Flash::Unlock(unlockStart, FirmwareFlashEnd - unlockStart))
@@ -930,44 +923,15 @@ void writeBinary()
 			{
 				++retry;
 			}
-# else
-			// Unlock each single page
-			cpu_irq_disable();
-			const bool ok = (flash_unlock(flashPos, flashPos + pageSize - 1, nullptr, nullptr) == FLASH_RC_OK);
-			cpu_irq_enable();
-			if (ok)
-			{
-				flashPos += pageSize;
-				retry = 0;
-			}
-			else
-			{
-				retry++;
-				break;
-			}
-
-			// Make sure we stay within FW Flash area
-			if (flashPos >= FirmwareFlashEnd)
-			{
-				flashPos = FirmwareFlashStart;
-# if SAM4E || SAM4S || SAME70 || SAME5x
-				MessageF("Erasing flash");
-				state = ErasingFlash;
-# else
-				bytesWritten = blockReadSize;
-				state = WritingUpgrade;
-# endif
-			}
-#endif
 		}
 		break;
 
-#if SAM4E || SAM4S || SAME70 || SAME5x
 	case ErasingFlash:
 		debugPrintf("Erasing 0x%08x", flashPos);
 		if (retry != 0)
 		{
-			MessageF("Erase retry #%u", retry);
+			MessageF("Erase retry #%u at offset %08" PRIx32, retry, flashPos - IFLASH_ADDR);
+			delay_ms(RetryMessageDelay);
 		}
 
 		{
@@ -992,7 +956,7 @@ void writeBinary()
 						: 128 * 1024;
 # endif
 			// No need to erase a sector that is already erased
-			if (IsSectorErased(flashPos, sectorSize) || flash_erase_sector(flashPos) == FLASH_RC_OK)
+			if (IsSectorErased(flashPos, sectorSize) || Flash::EraseSector(flashPos))
 #endif
 			{
 				// Check that the sector really is erased
@@ -1023,7 +987,6 @@ void writeBinary()
 			}
 		}
 		break;
-#endif
 
 	case WritingUpgrade:
 		// Attempt to read a chunk from the firmware file or SBC
@@ -1040,25 +1003,17 @@ void writeBinary()
 
 		// Write another page
 		{
+			static bool writeSuceeded = false;			// static so that the retry message can say whether the write or the verify failed
+
 			debugPrintf("Writing 0x%08x - 0x%08x", flashPos, flashPos + pageSize - 1);
 			if (retry != 0)
 			{
-				MessageF("Flash write retry #%u", retry);
+				MessageF("Flash write%s retry #%u at address %08" PRIx32, ((writeSuceeded) ? "/verify" : ""), retry, flashPos - IFLASH_ADDR);
+				delay_ms(RetryMessageDelay);
 			}
 
-#if SAME5x
-			const bool ok = Flash::Write(flashPos, pageSize, (uint8_t*)readData + bytesWritten);
-#else
-			cpu_irq_disable();
-			const bool ok =
-# if SAM4E || SAM4S || SAME70
-								flash_write(flashPos, readData + bytesWritten, pageSize, 0) == FLASH_RC_OK;
-# else
-								flash_write(flashPos, readData + bytesWritten, pageSize, 1) == FLASH_RC_OK;
-# endif
-			cpu_irq_enable();
-#endif
-			if (!ok)
+			writeSuceeded = Flash::Write(flashPos, pageSize, reinterpret_cast<const uint32_t *>(readData) + bytesWritten/4);
+			if (!writeSuceeded)
 			{
 				++retry;
 				break;
@@ -1127,6 +1082,7 @@ void writeBinary()
 		{
 			// Although this is not expected, the firmware has been written successfully so just continue as normal
 			MessageF("Timeout while exchanging checksum acknowledgement");
+			delay_ms(RetryMessageDelay);
 			state = LockingFlash;
 		}
 		else if (is_spi_transfer_complete())
@@ -1147,7 +1103,13 @@ void writeBinary()
 		{
 			// Attempt to flash the firmware again
 			flashPos = FirmwareFlashStart;
+#if SAME70
+			// For some reason the SAME70 fails to boot *with a valid firmware image* after a page has been rewritten.
+			// So we must erase the entire chip again and then reflash everything page by page. This lets the SAM boot as expected
+			state = ErasingFlash;
+#else
 			state = WritingUpgrade;
+#endif
 			reportNextPercent = reportPercentIncrement;
 			retry = 0;
 		}
@@ -1157,11 +1119,9 @@ void writeBinary()
 	case LockingFlash:
 		// Lock each single page again
 		{
-			debugPrintf("Locking 0x%08x - 0x%08x", flashPos, flashPos + pageSize - 1);
-
-# if SAME5x
 			// We can lock all the flash in one call. We may have to unlock from before the firmware start.
 			const uint32_t lockStart = FirmwareFlashStart & ~(Flash::GetLockRegionSize() - 1);
+			debugPrintf("Locking 0x%08x - 0x%08x", lockStart, FirmwareFlashEnd - lockStart);
 			if (Flash::Lock(lockStart, FirmwareFlashEnd - lockStart))
 			{
 				MessageF("Update successful! Rebooting...");
@@ -1171,25 +1131,6 @@ void writeBinary()
 			{
 				++retry;
 			}
-# else
-			cpu_irq_disable();
-			const bool ok = (flash_lock(flashPos, flashPos + pageSize - 1, nullptr, nullptr) == FLASH_RC_OK);
-			cpu_irq_enable();
-			if (ok)
-			{
-				flashPos += pageSize;
-				if (flashPos >= FirmwareFlashEnd)
-				{
-					MessageF("Update successful! Rebooting...");
-					Reset(true);
-				}
-				retry = 0;
-			}
-			else
-			{
-				retry++;
-			}
-#endif
 		}
 		break;
 	}
@@ -1203,42 +1144,32 @@ void closeBinary() noexcept
 }
 #endif
 
-void Reset(bool success) noexcept
+[[noreturn]] void Reset(bool success) noexcept
 {
 	if (!success)
 	{
-		delay_ms(1500);				// give the user a chance to read the error message on PanelDue
-		// Only start from bootloader if the firmware couldn't be written entirely
+		delay_ms(2000);				// give the user a chance to read the error message on PanelDue
+#if SAM4E || SAM4S || SAME70
+		// Start from bootloader next time if the firmware couldn't be written entirely
 		if (state >= WritingUpgrade)
 		{
-			// If anything went wrong, write the last error message to Flash to the beginning
-			// of the Flash memory. That may help finding out what went wrong...
-#if SAME5x
-			Flash::Unlock(FirmwareFlashStart, pageSize);
-			Flash::Write(FirmwareFlashStart, strlen(formatBuffer), (uint8_t*)formatBuffer);
-#else
-			cpu_irq_disable();
-			flash_unlock(FirmwareFlashStart, FirmwareFlashStart + pageSize, nullptr, nullptr);
-			flash_write(FirmwareFlashStart, formatBuffer, strlen(formatBuffer), 1);
-			// Start from bootloader next time
-			flash_clear_gpnvm(1);
-			cpu_irq_enable();
-#endif
-			// no reason to lock it again
+			Flash::ClearGpNvm(1);
 		}
+#elif SAME5x
+		// Start from uf2 bootloader next time. This pretends the reset button has been pressed twice in short succession
+		*DBL_TAP_PTR = DBL_TAP_MAGIC;
+#endif
 	}
 
 #ifdef IAP_VIA_SPI
 	digitalWrite(SbcTfrReadyPin, false);
 #endif
 
-	delay_ms(500);									// allow last message to PanelDue to go
-
+	// No reason to lock the flash again
 	digitalWrite(DiagLedPin, !LedOnPolarity);		// turn the LED off
 
 	// Reboot
-	Reset();
-	while(true) { }
+	ResetProcessor();
 }
 
 // Write message to PanelDue
@@ -1247,32 +1178,17 @@ void MessageF(const char *fmt, ...) noexcept
 {
 	va_list vargs;
 	va_start(vargs, fmt);
-	SafeVsnprintf(formatBuffer, ARRAY_SIZE(formatBuffer), fmt, vargs);
+	serialUart0.print("{\"message\":\"");
+	serialUart0.vprintf(fmt, vargs);
+	serialUart0.print("\"}\n");
 	va_end(vargs);
-
-	SERIAL_AUX_DEVICE.print("{\"message\":\"");
-	SERIAL_AUX_DEVICE.print(formatBuffer);
-	SERIAL_AUX_DEVICE.print("\"}\n");
-	delay_ms(10);
 }
 
-// The following functions are called by the startup code in CoreNG.
-// We define our own versions here to make the binary smaller, because we don't use the associated functionality.
-void AnalogInInit() noexcept
-{
-}
+#if SAME70
 
-extern "C" void TWI0_Handler() noexcept
-{
-}
+// Dummy assertion handler, called by the Cache module in CoreN2G
+extern "C" [[noreturn]] void vAssertCalled(uint32_t line, const char *file) noexcept { while (true) { } }
 
-extern "C" void TWI1_Handler() noexcept
-{
-}
-
-// Cache hooks called from the ASF. These are dummy because we run with the cache disabled.
-extern "C" void CacheFlushBeforeDMAReceive(const volatile void *start, size_t length) noexcept { }
-extern "C" void CacheInvalidateAfterDMAReceive(const volatile void *start, size_t length) noexcept { }
-extern "C" void CacheFlushBeforeDMASend(const volatile void *start, size_t length) noexcept { }
+#endif
 
 // End

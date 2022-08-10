@@ -177,6 +177,9 @@ void sd_mmc_unmount(uint8_t slot) noexcept;
 // Get the interface speed in bytes/sec
 uint32_t sd_mmc_get_interface_speed(uint8_t slot) noexcept;
 
+// Change the CS pin used by an SPI-connected card slot. Only used by the Duet 3 MB6HC. Linker garbage collection will eliminate this function in other builds.
+void sd_mmc_change_cs_pin(uint8_t slot, Pin csPin) noexcept;
+
 #endif
 
 /**
@@ -200,7 +203,7 @@ sd_mmc_err_t sd_mmc_init_read_blocks(uint8_t slot, uint32_t start, uint16_t nb_b
  * \return return SD_MMC_OK if started,
  *         otherwise return an error code (\ref sd_mmc_err_t).
  */
-sd_mmc_err_t sd_mmc_start_read_blocks(void *dest, uint16_t nb_block) noexcept;
+sd_mmc_err_t sd_mmc_start_read_blocks(void *dest, uint16_t nb_block, uint8_t slot) noexcept;
 
 /**
  * \brief Wait the end of read blocks of data from the card.
@@ -212,7 +215,7 @@ sd_mmc_err_t sd_mmc_start_read_blocks(void *dest, uint16_t nb_block) noexcept;
  * \return return SD_MMC_OK if success,
  *         otherwise return an error code (\ref sd_mmc_err_t).
  */
-sd_mmc_err_t sd_mmc_wait_end_of_read_blocks(bool abort) noexcept;
+sd_mmc_err_t sd_mmc_wait_end_of_read_blocks(bool abort, uint8_t slot) noexcept;
 
 /**
  * \brief Initialize the write blocks of data
@@ -235,7 +238,7 @@ sd_mmc_err_t sd_mmc_init_write_blocks(uint8_t slot, uint32_t start, uint16_t nb_
  * \return return SD_MMC_OK if started,
  *         otherwise return an error code (\ref sd_mmc_err_t).
  */
-sd_mmc_err_t sd_mmc_start_write_blocks(const void *src, uint16_t nb_block) noexcept;
+sd_mmc_err_t sd_mmc_start_write_blocks(const void *src, uint16_t nb_block, uint8_t slot) noexcept;
 
 /**
  * \brief Wait the end of write blocks of data
@@ -247,7 +250,7 @@ sd_mmc_err_t sd_mmc_start_write_blocks(const void *src, uint16_t nb_block) noexc
  * \return return SD_MMC_OK if success,
  *         otherwise return an error code (\ref sd_mmc_err_t).
  */
-sd_mmc_err_t sd_mmc_wait_end_of_write_blocks(bool abort) noexcept;
+sd_mmc_err_t sd_mmc_wait_end_of_write_blocks(bool abort, uint8_t slot) noexcept;
 
 #ifdef SDIO_SUPPORT_ENABLE
 /**
