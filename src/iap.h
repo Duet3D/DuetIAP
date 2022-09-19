@@ -82,8 +82,11 @@ const char * const defaultFwFile = "0:/firmware/DuetMaestroFirmware.bin";	// Whi
 const size_t NumSdCards = 2;
 
 # if defined(DUET3_MB6HC)
-const Pin DiagLedPin = PortCPin(20);
-constexpr bool LedOnPolarity = true;
+constexpr Pin DiagPinPre102 = PortCPin(20);
+constexpr bool DiagOnPolarityPre102 = true;
+constexpr Pin DiagPin102 = PortBPin(6);
+constexpr bool DiagOnPolarity102 = false;
+constexpr Pin VersionTestPin = PortAPin(04);	// this pin has a pulldown resistor on version 1.02 boards
 # elif defined(DUET3_MB6XD)
 const Pin DiagLedPin = PortBPin(6);
 constexpr bool LedOnPolarity = false;
