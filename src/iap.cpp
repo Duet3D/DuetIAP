@@ -42,24 +42,24 @@
 
 # ifdef IAP_VIA_SPI
 
-# if SAM4E || SAME70
-# include <asf/sam/drivers/spi/spi.h>
-# endif
+#  if SAM4E || SAME70
+#   include <asf/sam/drivers/spi/spi.h>
+#  endif
 
-# if USE_DMAC
-# include <asf/sam/drivers/dmac/dmac.h>
-# include <asf/sam/drivers/matrix/matrix.h>
-# endif
+#  if USE_DMAC
+#   include <asf/sam/drivers/dmac/dmac.h>
+#   include <asf/sam/drivers/matrix/matrix.h>
+#  endif
 
-# if USE_XDMAC
-# include <asf/sam/drivers/xdmac/xdmac.h>
-# endif
+#  if USE_XDMAC
+#   include <asf/sam/drivers/xdmac/xdmac.h>
+#  endif
 
-# if USE_DMAC_MANAGER
-# include <DmacManager.h>
-# endif
+#  if USE_DMAC_MANAGER
+#   include <DmacManager.h>
+#  endif
 
-#endif // IAP_VIA_SPI
+# endif // IAP_VIA_SPI
 
 // Later Duets have a diagnostic LED, which we flash regularly to indicate activity
 const uint32_t LedOnOffMillis = 100;
@@ -68,6 +68,29 @@ const uint32_t RetryMessageDelay = 200;			// milliseconds
 uint32_t lastLedMillis;
 bool ledIsOn;
 
+# if defined(DUET3_MB6HC)
+
+// LED pin and polarity depend on the board version
+Pin DiagLedPin;
+bool LedOnPolarity;
+
+static void SetLedPin()
+{
+	pinMode(VersionTestPin, INPUT_PULLUP);
+	delayMicroseconds(20);
+	if (digitalRead(VersionTestPin))
+	{
+		DiagLedPin = DiagPinPre102;
+		LedOnPolarity = DiagOnPolarityPre102;
+	}
+	else
+	{
+		DiagLedPin = DiagPin102;
+		LedOnPolarity = DiagOnPolarity102;
+	}
+}
+
+# endif
 #endif
 
 #ifdef IAP_VIA_SPI
@@ -158,6 +181,10 @@ void AppMain() noexcept
 	SysTick->LOAD = ((SystemCoreClockFreq/1000) - 1) << SysTick_LOAD_RELOAD_Pos;
 	SysTick->CTRL = (1 << SysTick_CTRL_ENABLE_Pos) | (1 << SysTick_CTRL_TICKINT_Pos) | (1 << SysTick_CTRL_CLKSOURCE_Pos);
 	NVIC_SetPriority (SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL); /* set Priority for Systick Interrupt */
+
+#if defined(DUET3_MB6HC)
+	SetLedPin();
+#endif
 
 #ifdef IAP_VIA_SPI
 	pinMode(SbcTfrReadyPin, OUTPUT_LOW);
