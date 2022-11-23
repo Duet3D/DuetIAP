@@ -192,15 +192,11 @@ constexpr DmaChannel DmacChanSbcTx = 8;
 constexpr DmaChannel DmacChanSbcRx = 9;
 constexpr DmaPriority DmacPrioSbc = 3;					// high speed SPI in slave mode
 
-// The following are needed only so that the SD library files will compile.
-Sdhc * const SdhcDevice = SDHC1;
-constexpr IRQn_Type SdhcIRQn = SDHC1_IRQn;
+# endif
 
-# else
+// Definitions for SD card interface
 
-// Definitions for SD card version
-
-#  if defined(FMDC)
+# if defined(FMDC)
 
 const char * const defaultFwFile = "0:/firmware/Duet3Firmware_FMDC.uf2";	// which file shall we default to used for IAP?
 constexpr Pin SdCardDetectPins[NumSdCards] = { PortBPin(12) };
@@ -211,7 +207,7 @@ constexpr GpioPinFunction SdMciPinsFunction = GpioPinFunction::I;
 Sdhc * const SdhcDevice = SDHC0;
 constexpr IRQn_Type SdhcIRQn = SDHC0_IRQn;
 
-#  elif defined(DUET3_MINI)
+# elif defined(DUET3_MINI)
 
 const char * const defaultFwFile = "0:/firmware/Duet3Firmware_Mini5plus.uf2";	// which file shall we default to used for IAP?
 constexpr Pin SdCardDetectPins[NumSdCards] = { PortBPin(16) };
@@ -222,9 +218,8 @@ constexpr GpioPinFunction SdMciPinsFunction = GpioPinFunction::I;
 Sdhc * const SdhcDevice = SDHC1;
 constexpr IRQn_Type SdhcIRQn = SDHC1_IRQn;
 
-#  else
-#   error Unknown board
-#  endif
+# else
+#  error Unknown board
 # endif
 #endif	// SAME5x
 

@@ -1015,6 +1015,7 @@ void writeBinary()
 			writeSuceeded = Flash::Write(flashPos, pageSize, reinterpret_cast<const uint32_t *>(readData) + bytesWritten/4);
 			if (!writeSuceeded)
 			{
+				MessageF("Flash write failed: pos=%08" PRIx32 " size=%" PRIu32 " err=%08" PRIx32, flashPos, pageSize, Flash::GetLastFlashError());
 				++retry;
 				break;
 			}
@@ -1022,6 +1023,7 @@ void writeBinary()
 			// Verify the written data
 			if (memcmp(readData + bytesWritten, reinterpret_cast<const void *>(flashPos), pageSize) != 0)
 			{
+				MessageF("Flash compare failed");
 				++retry;
 				break;
 			}
@@ -1125,6 +1127,7 @@ void writeBinary()
 			if (Flash::Lock(lockStart, FirmwareFlashEnd - lockStart))
 			{
 				MessageF("Update successful! Rebooting...");
+				delay_ms(100);
 				Reset(true);
 			}
 			else
@@ -1148,7 +1151,7 @@ void closeBinary() noexcept
 {
 	if (!success)
 	{
-		delay_ms(2000);				// give the user a chance to read the error message on PanelDue
+		delay_ms(4000);				// give the user a chance to read the error message on PanelDue
 #if SAM4E || SAM4S || SAME70
 		// Start from bootloader next time if the firmware couldn't be written entirely
 		if (state >= WritingUpgrade)
