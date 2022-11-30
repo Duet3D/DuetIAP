@@ -77,7 +77,7 @@ bool LedOnPolarity;
 static void SetLedPin()
 {
 	pinMode(VersionTestPin, INPUT_PULLUP);
-	delayMicroseconds(20);
+	delayMicroseconds(100);
 	if (digitalRead(VersionTestPin))
 	{
 		DiagLedPin = DiagPinPre102;
@@ -178,9 +178,9 @@ void AppMain() noexcept
 	DeviceInit();
 
 	// Initialise systick (needed for delay calls) - CoreN2G initialises it in non-interrupt mode
-	SysTick->LOAD = ((SystemCoreClockFreq/1000) - 1) << SysTick_LOAD_RELOAD_Pos;
-	SysTick->CTRL = (1 << SysTick_CTRL_ENABLE_Pos) | (1 << SysTick_CTRL_TICKINT_Pos) | (1 << SysTick_CTRL_CLKSOURCE_Pos);
-	NVIC_SetPriority (SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL); /* set Priority for Systick Interrupt */
+	SysTick->LOAD = ((SystemCoreClockFreq/1000) - 1u) << SysTick_LOAD_RELOAD_Pos;
+	SysTick->CTRL = (1ul << SysTick_CTRL_ENABLE_Pos) | (1ul << SysTick_CTRL_TICKINT_Pos) | (1ul << SysTick_CTRL_CLKSOURCE_Pos);
+	NVIC_SetPriority(SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL);	// set Priority for Systick Interrupt
 
 #if defined(DUET3_MB6HC)
 	SetLedPin();
