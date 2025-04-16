@@ -76,7 +76,7 @@ bool LedOnPolarity;
 
 static void SetLedPin()
 {
-	pinMode(VersionTestPin, INPUT_PULLUP);
+	SetPinMode(VersionTestPin, INPUT_PULLUP, false);
 	delayMicroseconds(20);
 	if (digitalRead(VersionTestPin))
 	{
@@ -187,7 +187,7 @@ void AppMain() noexcept
 #endif
 
 #ifdef IAP_VIA_SPI
-	pinMode(SbcTfrReadyPin, OUTPUT_LOW);
+	SetPinMode(SbcTfrReadyPin, OUTPUT_LOW);
 
 # if SAME5x
 	for (Pin p : SbcSpiSercomPins)
