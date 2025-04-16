@@ -49,6 +49,11 @@ SECTIONS
         KEEP(*(.vectors .vectors.*))
         *(.text .text.* .gnu.linkonce.t.*)
         *(.ramfunc .ramfunc.*)
+     	. = ALIGN(16);
+     	_sDmaBuffers = . ;
+    	*(.DmaBuffers .DmaBuffers.*)
+    	. = ALIGN(4);
+    	_eDmaBuffers = . ;
         *(.data .data.*)
         *(.glue_7t) *(.glue_7)
         *(.rodata .rodata* .gnu.linkonce.r.*)
