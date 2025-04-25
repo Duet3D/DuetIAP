@@ -122,7 +122,13 @@ ProcessState state = Initializing;
 uint32_t pageSize;
 uint32_t flashPos = FirmwareFlashStart;
 
-size_t retry = 0;
+unsigned int retry = 0;
+
+#ifndef IAP_VIA_SPI
+unsigned int eraseRetryCount = 0;
+uint32_t lastEraseRetryPos = 0xFFFFFFFF;
+#endif
+
 size_t bytesRead, bytesWritten;
 bool haveDataInBuffer;
 const size_t reportPercentIncrement = 20;
@@ -437,7 +443,7 @@ void setup_spi(size_t bytesToTransfer) noexcept
 	spi_enable(SBC_SPI);
 
 	// Enable end-of-transfer interrupt
-	(void)SBC_SPI->SPI_SR;						// clear any pending interrupt
+	(void)SBC_SPI->SPI_SR;							// clear any pending interrupt
 	SBC_SPI->SPI_IER = SPI_IER_NSSR;				// enable the NSS rising interrupt
 #endif
 
@@ -731,6 +737,26 @@ void ShowProgress() noexcept
 	}
 }
 
+// Return the size of the sector that starts at startPos
+uint32_t GetFlashSectorSize(uint32_t startPos)
+{
+#if SAME5x
+	return Flash::GetEraseRegionSize();
+#elif SAM4E || SAM4S
+	// Deal with varying size sectors on the SAM4E and SAM4S
+	// There are two 8K sectors, then one 48K sector, then seven 64K sectors
+	return (startPos - IFLASH_ADDR < 16 * 1024) ? 8 * 1024
+			: (startPos - IFLASH_ADDR == 16 * 1024) ? 48 * 1024
+				: 64 * 1024;
+#elif SAME70
+	// Deal with varying size sectors on the SAME70
+	// There are two 8K sectors, then one 112K sector, then the rest are 128K sectors
+	return (startPos - IFLASH_ADDR < 16 * 1024) ? 8 * 1024
+			: (startPos - IFLASH_ADDR == 16 * 1024) ? 112 * 1024
+				: 128 * 1024;
+#endif
+}
+
 // Check whether an areas of flash is erased
 bool IsSectorErased(uint32_t addr, uint32_t sectorSize)
 {
@@ -743,6 +769,40 @@ bool IsSectorErased(uint32_t addr, uint32_t sectorSize)
 		}
 	}
 	return true;
+}
+
+// Find the start address of the sector that holds a particular flash address
+uint32_t FindSectorStart(uint32_t addr)
+{
+	uint32_t sectorStart = IFLASH_ADDR;
+	while (true)
+	{
+		const uint32_t sectorSize = GetFlashSectorSize(sectorStart);
+		if (addr < sectorStart + sectorSize)
+		{
+			return sectorStart;
+		}
+		sectorStart += sectorSize;
+	}
+}
+
+// Compare a block of memory we just wrote with the data we wrote.
+// Return 0 if all OK, 1 if it contains 1s that should be 0s, 2 if it contains 0s that should be ones, 3 if it contains both.
+int CompareMemory(const uint32_t *readBack, const uint32_t *written, size_t numWords)
+{
+	uint32_t bad1s = 0;
+	uint32_t bad0s = 0;
+	while (numWords != 0)
+	{
+		const uint32_t dataReadBack = *readBack++;
+		const uint32_t dataWritten = *written++;
+		bad1s |= dataReadBack & (~dataWritten);
+		bad0s |= dataWritten & (~dataReadBack);
+		--numWords;
+	}
+	int ret = (bad1s == 0) ? 0 : 1;
+	if (bad0s != 0) { ret |= 2; }
+	return ret;
 }
 
 #ifdef IAP_VIA_SPI
@@ -918,9 +978,9 @@ bool ReadBlock()
 // This implements the actual functionality of this program
 void writeBinary()
 {
-	if (retry > maxRetries)
+	if (retry > MaxRetries)
 	{
-		MessageF("ERROR: Operation %d failed after %d retries", (int)state, maxRetries);
+		MessageF("ERROR: Operation %d failed after %d retries", (int)state, MaxRetries);
 		Reset(false);
 	}
 	else if (retry > 0)
@@ -962,27 +1022,11 @@ void writeBinary()
 		}
 
 		{
-# if SAME5x
-			const uint32_t sectorSize = Flash::GetEraseRegionSize();
+			const uint32_t sectorSize = GetFlashSectorSize(flashPos);
 			// No need to erase a sector that is already erased
+# if SAME5x
 			if (IsSectorErased(flashPos, sectorSize) || Flash::Erase(flashPos, sectorSize))
 #else
-# if SAM4E || SAM4S
-			const uint32_t sectorSize =
-				// Deal with varying size sectors on the SAM4E and SAM4S
-				// There are two 8K sectors, then one 48K sector, then seven 64K sectors
-				(flashPos - IFLASH_ADDR < 16 * 1024) ? 8 * 1024
-					: (flashPos - IFLASH_ADDR == 16 * 1024) ? 48 * 1024
-						: 64 * 1024;
-# elif SAME70
-			const uint32_t sectorSize =
-				// Deal with varying size sectors on the SAME70
-				// There are two 8K sectors, then one 112K sector, then the rest are 128K sectors
-				(flashPos - IFLASH_ADDR < 16 * 1024) ? 8 * 1024
-					: (flashPos - IFLASH_ADDR == 16 * 1024) ? 112 * 1024
-						: 128 * 1024;
-# endif
-			// No need to erase a sector that is already erased
 			if (IsSectorErased(flashPos, sectorSize) || Flash::EraseSector(flashPos))
 #endif
 			{
@@ -1015,6 +1059,31 @@ void writeBinary()
 		}
 		break;
 
+#ifndef IAP_VIA_SPI
+
+	case EraseRetry:
+		if (retry != 0)
+		{
+			MessageF("Erase sector retry #%u at offset %08" PRIx32, retry, flashPos - IFLASH_ADDR);
+			delay_ms(RetryMessageDelay);
+		}
+
+		{
+			const uint32_t sectorSize = GetFlashSectorSize(flashPos);
+# if SAME5x
+			if (Flash::Erase(flashPos, sectorSize))
+# else
+			if (Flash::EraseSector(flashPos) && IsSectorErased(flashPos, sectorSize))
+# endif
+			{
+				haveDataInBuffer = false;
+				state = WritingUpgrade;
+			}
+			++retry;
+		}
+		break;
+#endif
+
 	case WritingUpgrade:
 		// Attempt to read a chunk from the firmware file or SBC
 		if (!haveDataInBuffer)
@@ -1039,7 +1108,7 @@ void writeBinary()
 				delay_ms(RetryMessageDelay);
 			}
 
-			writeSuceeded = Flash::Write(flashPos, pageSize, reinterpret_cast<const uint32_t *>(readData) + bytesWritten/4);
+			writeSuceeded = Flash::Write(flashPos, pageSize, reinterpret_cast<const uint32_t *>(readData + bytesWritten));
 			if (!writeSuceeded)
 			{
 				MessageF("Flash write failed: pos=%08" PRIx32 " size=%" PRIu32 " err=%08" PRIx32, flashPos, pageSize, Flash::GetLastFlashError());
@@ -1047,12 +1116,43 @@ void writeBinary()
 				break;
 			}
 
-			// Verify the written data
-			if (memcmp(readData + bytesWritten, reinterpret_cast<const void *>(flashPos), pageSize) != 0)
+			// Verify the written data. Our data is aligned, so we can compare words.
+			const int cmp = CompareMemory(reinterpret_cast<const uint32_t*>(flashPos), (const uint32_t*)(readData + bytesWritten), pageSize >> 2);
+			if (cmp == 1)
 			{
-				MessageF("Flash compare failed");
+				// There are some bits reading as 1 that should be zero
+				MessageF("Flash compare failed, missing zeros");
 				++retry;
 				break;
+			}
+
+			if (cmp != 0)
+			{
+				// There are some bits reading as 0 that should be 1. Erase the sector and start again from the beginning of this sector.
+				MessageF("Flash compare failed, missing ones");
+#ifdef IAP_VIA_SPI
+				// Unfortunately the SPI interface doesn't allow us to seek back to the required file position
+				MessageF("ERROR: cannot repeat sector erase %" PRIu32, flashPos);
+				Reset(false);
+#else
+				flashPos = FindSectorStart(flashPos);
+				if (flashPos == lastEraseRetryPos)
+				{
+					++eraseRetryCount;
+					if (eraseRetryCount == MaxEraseRetries)
+					{
+						MessageF("ERROR: too many erase sector retries at pos %" PRIu32, flashPos);
+						Reset(false);
+					}
+				}
+				else
+				{
+					eraseRetryCount = 0;
+				}
+				retry = 0;
+				state = EraseRetry;
+				break;
+#endif
 			}
 
 			retry = 0;

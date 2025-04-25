@@ -174,8 +174,8 @@ constexpr GpioPinFunction Serial0PinFunction = GpioPinFunction::D;
 #  error Unknown board
 # endif
 
-const size_t NumSdCards = 1;
-const Pin DiagLedPin = PortAPin(31);
+constexpr size_t NumSdCards = 1;
+constexpr Pin DiagLedPin = PortAPin(31);
 constexpr bool LedOnPolarity = false;
 
 # ifdef IAP_VIA_SPI
@@ -201,7 +201,7 @@ constexpr DmaPriority DmacPrioSbc = 3;					// high speed SPI in slave mode
 
 # if defined(FMDC)
 
-const char * const defaultFwFile = "0:/firmware/Duet3Firmware_FMDC.uf2";	// which file shall we default to used for IAP?
+constexpr const char * defaultFwFile = "0:/firmware/Duet3Firmware_FMDC.uf2";	// which file shall we default to used for IAP?
 constexpr Pin SdCardDetectPins[NumSdCards] = { PortBPin(12) };
 constexpr Pin SdWriteProtectPins[NumSdCards] = { NoPin };
 constexpr Pin SdSpiCSPins[1] = { NoPin };
@@ -227,20 +227,20 @@ constexpr IRQn_Type SdhcIRQn = SDHC1_IRQn;
 #endif	// SAME5x
 
 #if SAME5x
-const uint32_t BootloaderSize = 0x4000;									// we have a 16K USB bootloader
-const uint32_t FirmwareFlashStart = FLASH_ADDR + BootloaderSize;
-const uint32_t FirmwareFlashEnd = FLASH_ADDR + FLASH_SIZE - (16 * 1024);	// allow 16K for SMART EEPROM
-const uint32_t IFLASH_ADDR = FLASH_ADDR;								// define this so that error message print can print the offset
+constexpr uint32_t BootloaderSize = 0x4000;									// we have a 16K USB bootloader
+constexpr uint32_t FirmwareFlashStart = FLASH_ADDR + BootloaderSize;
+constexpr uint32_t FirmwareFlashEnd = FLASH_ADDR + FLASH_SIZE - (16 * 1024);	// allow 16K for SMART EEPROM
+constexpr uint32_t IFLASH_ADDR = FLASH_ADDR;								// define this so that error message print can print the offset
 #else
-const uint32_t FirmwareFlashStart = IFLASH_ADDR;
-const uint32_t FirmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE;
+constexpr uint32_t FirmwareFlashStart = IFLASH_ADDR;
+constexpr uint32_t FirmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE;
 #endif
 
 #ifdef IAP_VIA_SPI
 
-const uint32_t NvicPrioritySpi = 1;
-const uint32_t TransferCompleteDelay = 400;								// DCS waits 500ms when the firmware image has been transferred
-const uint32_t TransferTimeout = 2000;									// How long to wait before timing out
+constexpr uint32_t NvicPrioritySpi = 1;
+constexpr uint32_t TransferCompleteDelay = 400;								// DCS waits 500ms when the firmware image has been transferred
+constexpr uint32_t TransferTimeout = 2000;									// How long to wait before timing out
 
 struct FlashVerifyRequest
 {
@@ -251,7 +251,7 @@ struct FlashVerifyRequest
 
 #else
 
-const char * const fwFilePrefix = "0:/";								// we expect this at the start of a firmware file name
+constexpr const char * fwFilePrefix = "0:/";								// we expect this at the start of a firmware file name
 
 void initFilesystem();
 void getFirmwareFileName();
@@ -261,8 +261,9 @@ void closeBinary();
 #endif
 
 // Read and write only 2 KiB of data at once (must be multiple of IFLASH_PAGE_SIZE).
-const size_t blockReadSize = 2048;
-const size_t maxRetries = 5;											// Allow 5 retries max if anything goes wrong
+constexpr size_t blockReadSize = 2048;
+constexpr unsigned int MaxRetries = 5;										// Allow 5 retries max if anything goes wrong
+constexpr unsigned int MaxEraseRetries = 3;
 
 enum ProcessState
 {
@@ -277,6 +278,8 @@ enum ProcessState
 	VerifyingChecksum,
 	SendingChecksumOK,
 	SendingChecksumError
+#else
+	EraseRetry,
 #endif
 };
 
