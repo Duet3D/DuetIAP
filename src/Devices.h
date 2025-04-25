@@ -15,11 +15,4 @@ extern AsyncSerial serialUart0;
 
 void DeviceInit() noexcept;
 
-#if SAME5x
-
-// GCLK numbers not defined in the core
-static const unsigned int GclkNum90MHz = 5;		// for SDHC
-
-#endif
-
 #endif /* SRC_DEVICES_H_ */
