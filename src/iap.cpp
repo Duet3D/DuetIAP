@@ -1060,7 +1060,6 @@ void writeBinary()
 		break;
 
 #ifndef IAP_VIA_SPI
-
 	case EraseRetry:
 		if (retry != 0)
 		{
@@ -1116,7 +1115,9 @@ void writeBinary()
 				break;
 			}
 
+#ifndef IAP_VIA_SPI
 			// Verify the written data. Our data is aligned, so we can compare words.
+			// In SBC mode this happens at the end of the flash process using a CRC checksum.
 			const int cmp = CompareMemory(reinterpret_cast<const uint32_t*>(flashPos), (const uint32_t*)(readData + bytesWritten), pageSize >> 2);
 			if (cmp == 1)
 			{
@@ -1130,11 +1131,6 @@ void writeBinary()
 			{
 				// There are some bits reading as 0 that should be 1. Erase the sector and start again from the beginning of this sector.
 				MessageF("Flash compare failed, missing ones");
-#ifdef IAP_VIA_SPI
-				// Unfortunately the SPI interface doesn't allow us to seek back to the required file position
-				MessageF("ERROR: cannot repeat sector erase %" PRIu32, flashPos);
-				Reset(false);
-#else
 				flashPos = FindSectorStart(flashPos);
 				if (flashPos == lastEraseRetryPos)
 				{
@@ -1152,8 +1148,8 @@ void writeBinary()
 				retry = 0;
 				state = EraseRetry;
 				break;
-#endif
 			}
+#endif
 
 			retry = 0;
 			bytesWritten += pageSize;
