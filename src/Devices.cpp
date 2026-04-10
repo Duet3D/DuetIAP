@@ -9,31 +9,13 @@
 
 #if SAME5x
 
-#include "iap.h"			// for defines of SERIAL0_ISR0 etc.
+#include "iap.h"
 
 #include <hal_gpio.h>
 
 // Serial device support
-AsyncSerial serialUart0(Serial0SercomNumber, Sercom0RxPad, 512, 512, [](AsyncSerial*) noexcept { }, [](AsyncSerial*) noexcept { });
-
-# if !defined(SERIAL0_ISR0) || !defined(SERIAL0_ISR2) || !defined(SERIAL0_ISR3)
-#  error SERIAL0_ISRn not defined
-# endif
-
-void SERIAL0_ISR0() noexcept
-{
-	serialUart0.Interrupt0();
-}
-
-void SERIAL0_ISR2() noexcept
-{
-	serialUart0.Interrupt2();
-}
-
-void SERIAL0_ISR3() noexcept
-{
-	serialUart0.Interrupt3();
-}
+static constexpr UartParameters serial0Params = { Serial0SercomNumber, Serial0RxPin, Serial0TxPin, Serial0PinFunction, Sercom0RxPad, 0, 512, 512 };
+AsyncSerial serialUart0(serial0Params);
 
 static void SdhcInit() noexcept
 {
@@ -59,77 +41,43 @@ static void SdhcInit() noexcept
 	}
 }
 
-// Serial interface
-static void SerialInit() noexcept
-{
-	SetPinFunction(Serial0TxPin, Serial0PinFunction);
-	SetPinFunction(Serial0RxPin, Serial0PinFunction);
-}
-
 #else
+
+// SystemCoreClock is required by CoreN2G but not provided by the library for SAM4E/SAM4S/SAME70.
+// It is set to the correct value by the startup code.
+uint32_t SystemCoreClock = CHIP_FREQ_MAINCK_RC_4MHZ;
+
 # if SAM4E
 
-AsyncSerial serialUart0(UART0, UART0_IRQn, ID_UART0, 512, 512, [](AsyncSerial*) noexcept { }, [](AsyncSerial*) noexcept { });
-
-constexpr Pin APIN_Serial0_RXD = PortAPin(9);
-constexpr Pin APIN_Serial0_TXD = PortAPin(10);
-constexpr auto Serial0PinFunction = GpioPinFunction::A;
+static constexpr UartParameters serial0Params = { 0, PortAPin(9), PortAPin(10), GpioPinFunction::A, 512, 512 };
+AsyncSerial serialUart0(serial0Params);
 
 constexpr Pin HcmciMclkPin = PortAPin(29);
 constexpr auto HsmciMclkPinFunction = GpioPinFunction::C;
 constexpr Pin HsmciOtherPins[] = { PortAPin(26), PortAPin(27), PortAPin(28), PortAPin(30), PortAPin(31) };
 constexpr auto HsmciOtherPinsFunction = GpioPinFunction::C;
-
-void UART0_Handler(void) noexcept
-{
-	serialUart0.IrqHandler();
-}
 
 # elif SAM4S
 
-// Serial device support
-AsyncSerial serialUart0(UART1, UART1_IRQn, ID_UART1, 512, 512, [](AsyncSerial*) noexcept { }, [](AsyncSerial*) noexcept { });
-
-constexpr Pin APIN_Serial0_RXD = 28;
-constexpr Pin APIN_Serial0_TXD = 29;
-constexpr auto Serial0PinFunction = GpioPinFunction::A;
+static constexpr UartParameters serial0Params = { 1, 28, 29, GpioPinFunction::A, 512, 512 };
+AsyncSerial serialUart0(serial0Params);
 
 constexpr Pin HcmciMclkPin = PortAPin(29);
 constexpr auto HsmciMclkPinFunction = GpioPinFunction::C;
 constexpr Pin HsmciOtherPins[] = { PortAPin(26), PortAPin(27), PortAPin(28), PortAPin(30), PortAPin(31) };
 constexpr auto HsmciOtherPinsFunction = GpioPinFunction::C;
 
-void UART1_Handler(void) noexcept
-{
-	serialUart0.IrqHandler();
-}
-
 # elif SAME70
 
-AsyncSerial serialUart0(UART2, UART2_IRQn, ID_UART2, 512, 512, [](AsyncSerial*) noexcept { }, [](AsyncSerial*) noexcept { });
-
-constexpr Pin APIN_Serial0_RXD = PortDPin(25);
-constexpr Pin APIN_Serial0_TXD = PortDPin(26);
-constexpr auto Serial0PinFunction = GpioPinFunction::C;
+static constexpr UartParameters serial0Params = { 2, PortDPin(25), PortDPin(26), GpioPinFunction::C, 512, 512 };
+AsyncSerial serialUart0(serial0Params);
 
 constexpr Pin HcmciMclkPin = PortAPin(25);
 constexpr auto HsmciMclkPinFunction = GpioPinFunction::D;
 constexpr Pin HsmciOtherPins[] = { PortAPin(26), PortAPin(27), PortAPin(28), PortAPin(30), PortAPin(31) };
 constexpr auto HsmciOtherPinsFunction = GpioPinFunction::C;
 
-void UART2_Handler(void) noexcept
-{
-	serialUart0.IrqHandler();
-}
-
 # endif
-
-void SerialInit() noexcept
-{
-	SetPinFunction(APIN_Serial0_RXD, Serial0PinFunction);
-	SetPinFunction(APIN_Serial0_TXD, Serial0PinFunction);
-	EnablePullup(APIN_Serial0_RXD);
-}
 
 void SdhcInit() noexcept
 {
@@ -145,7 +93,6 @@ void SdhcInit() noexcept
 // Device initialisation
 void DeviceInit() noexcept
 {
-	SerialInit();
 	SdhcInit();
 }
 

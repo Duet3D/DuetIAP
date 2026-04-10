@@ -1,7 +1,7 @@
 # Misc
 .settings/
 
-# Output folders
+# Eclipse output folders
 /Duet3MB6HC_RAM/
 /Duet3MB6HC_SPI_RAM/
 /Duet3MB6XD_RAM/
@@ -11,4 +11,15 @@
 /SAM4S_RAM/
 /Duet3Mini_SD_RAM/
 /Duet3Mini_SPI_RAM/
+
+# Makefile output folders
+/SAM4E_SD/
+/SAM4E_SPI/
+/SAM4S_SD/
+/Duet3_MB6HC_SD/
+/Duet3_MB6HC_SPI/
+/Duet3_MB6XD_SD/
+/Duet3_MB6XD_SPI/
+/Duet3Mini_SD/
+/Duet3Mini_SPI/
 /FMDC_SD/

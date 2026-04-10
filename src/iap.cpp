@@ -291,6 +291,10 @@ static xdmac_channel_config_t xdmac_tx_cfg, xdmac_rx_cfg;
 volatile bool dataReceived = false, transferPending = false;
 bool transferReadyHigh = false;
 
+#if SAME5x
+static void SbcSpiIrqHandler(void *) noexcept;
+#endif
+
 void setup_spi(size_t bytesToTransfer) noexcept
 {
 # if !SAME5x
@@ -447,6 +451,11 @@ void setup_spi(size_t bytesToTransfer) noexcept
 	SBC_SPI->SPI_IER = SPI_IER_NSSR;				// enable the NSS rising interrupt
 #endif
 
+#if SAME5x
+	// Register the SBC SPI interrupt handler via the CoreN2G SERCOM callback mechanism.
+	// Only the IRQ3 (SS low) handler is needed.
+	Serial::SetSercomVector(SbcSpiSercomNumber, nullptr, nullptr, nullptr, SbcSpiIrqHandler, nullptr);
+#endif
 	NVIC_SetPriority(SBC_SPI_IRQn, NvicPrioritySpi);
 	NVIC_EnableIRQ(SBC_SPI_IRQn);
 
@@ -484,13 +493,12 @@ void disable_spi() noexcept
 #endif
 }
 
-# ifndef SBC_SPI_HANDLER
-#  error SBC_SPI_HANDLER undefined
-# endif
-
-extern "C" void SBC_SPI_HANDLER(void) noexcept
-{
 #if SAME5x
+
+// On the SAME5x, SERCOM interrupt handlers are managed by CoreN2G Serial.cpp.
+// We register our SPI handler as a callback via Serial::SetSercomVector().
+static void SbcSpiIrqHandler(void *) noexcept
+{
 	// On the SAM5x we can't get an end-of-transfer interrupt, only a start-of-transfer interrupt.
 	// So we can't disable SPI or DMA in this ISR.
 	const uint8_t status = SbcSpiSercom->SPI.INTFLAG.reg;
@@ -500,7 +508,16 @@ extern "C" void SBC_SPI_HANDLER(void) noexcept
 		SbcSpiSercom->SPI.INTFLAG.reg = SERCOM_SPI_INTENSET_SSL;		// clear the status
 		dataReceived = true;
 	}
+}
+
 #else
+
+# ifndef SBC_SPI_HANDLER
+#  error SBC_SPI_HANDLER undefined
+# endif
+
+extern "C" void SBC_SPI_HANDLER(void) noexcept
+{
 	const uint32_t status = SBC_SPI->SPI_SR;							// read status and clear interrupt
 	SBC_SPI->SPI_IDR = SPI_IER_NSSR;									// disable the interrupt
 	if ((status & SPI_SR_NSSR) != 0)
@@ -509,8 +526,9 @@ extern "C" void SBC_SPI_HANDLER(void) noexcept
 		disable_spi();
 		dataReceived = true;
 	}
-#endif
 }
+
+#endif
 
 bool is_spi_transfer_complete() noexcept
 {
