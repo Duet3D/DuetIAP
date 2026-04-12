@@ -46,8 +46,8 @@ export DEBUG_FLAGS
 
 # Available build configurations
 SD_CONFIGS := SAM4E_SD SAM4S_SD Duet3_MB6HC_SD Duet3_MB6XD_SD Duet3Mini_SD FMDC_SD
-SPI_CONFIGS := SAM4E_SPI Duet3_MB6HC_SPI Duet3_MB6XD_SPI Duet3Mini_SPI
-CONFIGS := $(SD_CONFIGS) $(SPI_CONFIGS)
+SBC_CONFIGS := SAM4E_SBC Duet3_MB6HC_SBC Duet3_MB6XD_SBC Duet3Mini_SBC
+CONFIGS := $(SD_CONFIGS) $(SBC_CONFIGS)
 
 # Print available targets
 .PHONY: help
@@ -64,16 +64,16 @@ help:
 	$(Q)echo "  Duet3Mini_SD        - Duet 3 Mini 5+ (SAME54)"
 	$(Q)echo "  FMDC_SD             - FMDC (SAME51)"
 	$(Q)echo ""
-	$(Q)echo "SPI/SBC IAP targets (firmware update from SBC):"
-	$(Q)echo "  SAM4E_SPI           - Duet 2 WiFi/Ethernet (SAM4E)"
-	$(Q)echo "  Duet3_MB6HC_SPI     - Duet 3 MB6HC (SAME70)"
-	$(Q)echo "  Duet3_MB6XD_SPI     - Duet 3 MB6XD (SAME70)"
-	$(Q)echo "  Duet3Mini_SPI       - Duet 3 Mini 5+ (SAME54)"
+	$(Q)echo "SBC IAP targets (firmware update from SBC via SPI/USB):"
+	$(Q)echo "  SAM4E_SBC           - Duet 2 WiFi/Ethernet (SAM4E, SPI only)"
+	$(Q)echo "  Duet3_MB6HC_SBC     - Duet 3 MB6HC (SAME70, SPI+USB)"
+	$(Q)echo "  Duet3_MB6XD_SBC     - Duet 3 MB6XD (SAME70, SPI+USB)"
+	$(Q)echo "  Duet3Mini_SBC       - Duet 3 Mini 5+ (SAME54, SPI+USB)"
 	$(Q)echo ""
 	$(Q)echo "Other targets:"
 	$(Q)echo "  all                 - Build all configurations"
 	$(Q)echo "  all-sd              - Build all SD card configurations"
-	$(Q)echo "  all-spi             - Build all SPI/SBC configurations"
+	$(Q)echo "  all-sbc             - Build all SBC configurations"
 	$(Q)echo "  clean               - Clean all build outputs"
 	$(Q)echo "  clean-all           - Clean all build outputs and libraries"
 	$(Q)echo "  clean-<config>      - Clean specific configuration"
@@ -86,15 +86,15 @@ help:
 	$(Q)echo ""
 	$(Q)echo "Examples:"
 	$(Q)echo "  make Duet3_MB6HC_SD                         # Build MB6HC SD IAP"
-	$(Q)echo "  make Duet3_MB6HC_SPI V=1                    # Build with verbose output"
+	$(Q)echo "  make Duet3_MB6HC_SBC V=1                    # Build MB6HC SBC with verbose output"
 	$(Q)echo "  make all-sd                                 # Build all SD IAP binaries"
 	$(Q)echo ""
 
 # Build all configurations
-.PHONY: all all-sd all-spi
+.PHONY: all all-sd all-sbc
 all: $(CONFIGS)
 all-sd: $(SD_CONFIGS)
-all-spi: $(SPI_CONFIGS)
+all-sbc: $(SBC_CONFIGS)
 
 # Verify toolchain
 .PHONY: test-toolchain
@@ -114,7 +114,9 @@ test-toolchain:
 .PHONY: $(WORKSPACE)/CoreN2G/SAM4E_SDHC/libCoreN2G.a \
         $(WORKSPACE)/CoreN2G/SAM4S_SDHC/libCoreN2G.a \
         $(WORKSPACE)/CoreN2G/SAME70_SDHC/libCoreN2G.a \
+        $(WORKSPACE)/CoreN2G/SAME70_SDHC_USB/libCoreN2G.a \
         $(WORKSPACE)/CoreN2G/SAME5x_SDHC/libCoreN2G.a \
+        $(WORKSPACE)/CoreN2G/SAME5x_SDHC_USB/libCoreN2G.a \
         $(WORKSPACE)/RRFLibraries/SAM4E/libRRFLibraries.a \
         $(WORKSPACE)/RRFLibraries/SAM4S/libRRFLibraries.a \
         $(WORKSPACE)/RRFLibraries/SAME70/libRRFLibraries.a \
@@ -132,9 +134,17 @@ $(WORKSPACE)/CoreN2G/SAME70_SDHC/libCoreN2G.a:
 	$(Q)echo "  BUILD   CoreN2G/SAME70_SDHC"
 	$(Q)$(MAKE) $(VERBOSE) -C $(WORKSPACE)/CoreN2G SAME70_SDHC
 
+$(WORKSPACE)/CoreN2G/SAME70_SDHC_USB/libCoreN2G.a:
+	$(Q)echo "  BUILD   CoreN2G/SAME70_SDHC_USB"
+	$(Q)$(MAKE) $(VERBOSE) -C $(WORKSPACE)/CoreN2G SAME70_SDHC_USB
+
 $(WORKSPACE)/CoreN2G/SAME5x_SDHC/libCoreN2G.a:
 	$(Q)echo "  BUILD   CoreN2G/SAME5x_SDHC"
 	$(Q)$(MAKE) $(VERBOSE) -C $(WORKSPACE)/CoreN2G SAME5x_SDHC
+
+$(WORKSPACE)/CoreN2G/SAME5x_SDHC_USB/libCoreN2G.a:
+	$(Q)echo "  BUILD   CoreN2G/SAME5x_SDHC_USB"
+	$(Q)$(MAKE) $(VERBOSE) -C $(WORKSPACE)/CoreN2G SAME5x_SDHC_USB
 
 $(WORKSPACE)/RRFLibraries/SAM4E/libRRFLibraries.a:
 	$(Q)echo "  BUILD   RRFLibraries/SAM4E"
@@ -154,14 +164,14 @@ $(WORKSPACE)/RRFLibraries/SAME51/libRRFLibraries.a:
 
 # Include board-specific makefiles
 -include Makefiles/SAM4E_SD.mk
--include Makefiles/SAM4E_SPI.mk
+-include Makefiles/SAM4E_SBC.mk
 -include Makefiles/SAM4S_SD.mk
 -include Makefiles/Duet3_MB6HC_SD.mk
--include Makefiles/Duet3_MB6HC_SPI.mk
+-include Makefiles/Duet3_MB6HC_SBC.mk
 -include Makefiles/Duet3_MB6XD_SD.mk
--include Makefiles/Duet3_MB6XD_SPI.mk
+-include Makefiles/Duet3_MB6XD_SBC.mk
 -include Makefiles/Duet3Mini_SD.mk
--include Makefiles/Duet3Mini_SPI.mk
+-include Makefiles/Duet3Mini_SBC.mk
 -include Makefiles/FMDC_SD.mk
 
 # Generic clean target

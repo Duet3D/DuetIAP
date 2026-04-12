@@ -126,6 +126,7 @@ D3MB6XDSD_LDFLAGS2 := \
 	-Wl,--check-sections \
 	-Wl,--gc-sections \
 	-Wl,--entry=Reset_Handler \
+	-Wl,-u,_estack \
 	-Wl,--unresolved-symbols=report-all \
 	-Wl,--warn-common \
 	-Wl,--warn-section-align \

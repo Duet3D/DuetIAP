@@ -12,8 +12,20 @@
  */
 
 #ifndef IAP_H_INCLUDED
+#define IAP_H_INCLUDED
 
 #include <CoreIO.h>
+
+// Derive convenience macros from the build-system defines
+#if defined(IAP_SBC_SPI) || defined(IAP_SBC_USB)
+# define IAP_VIA_SBC 1
+#endif
+
+// Support legacy define for backward compatibility with existing build configs
+#if defined(IAP_VIA_SPI) && !defined(IAP_SBC_SPI)
+# define IAP_SBC_SPI 1
+# define IAP_VIA_SBC 1
+#endif
 
 #if SAM4S
 # define IFLASH_ADDR		(IFLASH0_ADDR)
@@ -29,7 +41,7 @@
 constexpr Pin DiagLedPin = PortCPin(2);
 constexpr bool LedOnPolarity = true;
 
-# ifdef IAP_VIA_SPI
+# ifdef IAP_SBC_SPI
 
 // SPI interface and pins
 #define SBC_SPI					SPI
@@ -52,7 +64,9 @@ const uint32_t SBC_SPI_RX_DMA_HW_ID = 2;
 constexpr uint8_t DmacChanSbcTx = 1;				// These two should be
 constexpr uint8_t DmacChanSbcRx = 2;				// kept in sync with RRF!
 
-#else
+# endif // IAP_SBC_SPI
+
+# ifndef IAP_VIA_SBC
 
 const size_t NumSdCards = 2;
 const Pin SdCardDetectPins[NumSdCards] = { PortCPin(21), NoPin };
@@ -94,7 +108,7 @@ constexpr bool LedOnPolarity = false;
 #  error Unknown board
 # endif
 
-# ifdef IAP_VIA_SPI
+# ifdef IAP_SBC_SPI
 
 const uint32_t SBC_SPI_TX_PERID = 3;
 const uint32_t SBC_SPI_RX_PERID = 4;
@@ -115,7 +129,9 @@ constexpr GpioPinFunction SpiPinsFunction = GpioPinFunction::C;
 
 constexpr Pin SbcTfrReadyPin = PortEPin(2);
 
-# else
+# endif // IAP_SBC_SPI
+
+# ifndef IAP_VIA_SBC
 
 #  if defined(DUET3_MB6HC)
 const char * const defaultFwFile = "0:/firmware/Duet3Firmware_MB6HC.bin";			// which file shall we default to used for IAP?
@@ -178,7 +194,7 @@ constexpr size_t NumSdCards = 1;
 constexpr Pin DiagLedPin = PortAPin(31);
 constexpr bool LedOnPolarity = false;
 
-# ifdef IAP_VIA_SPI
+# ifdef IAP_SBC_SPI
 
 #  define SBC_SPI_HANDLER SERCOM0_3_Handler
 #  define USE_32BIT_TRANSFERS 1
@@ -195,11 +211,13 @@ constexpr DmaChannel DmacChanSbcTx = 8;
 constexpr DmaChannel DmacChanSbcRx = 9;
 constexpr DmaPriority DmacPrioSbc = 3;					// high speed SPI in slave mode
 
-# endif
+# endif // IAP_SBC_SPI
 
 // Definitions for SD card interface
 
-# if defined(FMDC)
+# ifndef IAP_VIA_SBC
+
+#  if defined(FMDC)
 
 constexpr const char * defaultFwFile = "0:/firmware/Duet3Firmware_FMDC.uf2";	// which file shall we default to used for IAP?
 constexpr Pin SdCardDetectPins[NumSdCards] = { PortBPin(12) };
@@ -210,7 +228,7 @@ constexpr GpioPinFunction SdMciPinsFunction = GpioPinFunction::I;
 Sdhc * const SdhcDevice = SDHC0;
 constexpr IRQn_Type SdhcIRQn = SDHC0_IRQn;
 
-# elif defined(DUET3_MINI)
+#  elif defined(DUET3_MINI)
 
 const char * const defaultFwFile = "0:/firmware/Duet3Firmware_Mini5plus.uf2";	// which file shall we default to used for IAP?
 constexpr Pin SdCardDetectPins[NumSdCards] = { PortBPin(16) };
@@ -221,9 +239,11 @@ constexpr GpioPinFunction SdMciPinsFunction = GpioPinFunction::I;
 Sdhc * const SdhcDevice = SDHC1;
 constexpr IRQn_Type SdhcIRQn = SDHC1_IRQn;
 
-# else
-#  error Unknown board
-# endif
+#  else
+#   error Unknown board
+#  endif
+
+# endif // !IAP_VIA_SBC
 #endif	// SAME5x
 
 #if SAME5x
@@ -236,11 +256,16 @@ constexpr uint32_t FirmwareFlashStart = IFLASH_ADDR;
 constexpr uint32_t FirmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE;
 #endif
 
-#ifdef IAP_VIA_SPI
+// Common constants
+constexpr size_t blockReadSize = 2048;				// Read and write only 2 KiB of data at once (must be multiple of IFLASH_PAGE_SIZE)
+constexpr unsigned int MaxRetries = 5;				// Allow 5 retries max if anything goes wrong
+constexpr unsigned int MaxEraseRetries = 3;
 
-constexpr uint32_t NvicPrioritySpi = 1;
-constexpr uint32_t TransferCompleteDelay = 400;								// DCS waits 500ms when the firmware image has been transferred
-constexpr uint32_t TransferTimeout = 2000;									// How long to wait before timing out
+#include <General/IapInfo.h>
+
+#ifdef IAP_VIA_SBC
+
+constexpr uint32_t TransferTimeout = 8000;			// How long to wait before timing out (common to both USB and SPI)
 
 struct FlashVerifyRequest
 {
@@ -251,20 +276,11 @@ struct FlashVerifyRequest
 
 #else
 
-constexpr const char * fwFilePrefix = "0:/";								// we expect this at the start of a firmware file name
-
-void initFilesystem();
-void getFirmwareFileName();
-void openBinary();
-void closeBinary();
+constexpr const char * fwFilePrefix = "0:/";		// we expect this at the start of a firmware file name
 
 #endif
 
-// Read and write only 2 KiB of data at once (must be multiple of IFLASH_PAGE_SIZE).
-constexpr size_t blockReadSize = 2048;
-constexpr unsigned int MaxRetries = 5;										// Allow 5 retries max if anything goes wrong
-constexpr unsigned int MaxEraseRetries = 3;
-
+// Process states
 enum ProcessState
 {
 	Initializing,
@@ -274,16 +290,39 @@ enum ProcessState
 #endif
 	WritingUpgrade,
 	LockingFlash,
-#ifdef IAP_VIA_SPI
+#ifdef IAP_VIA_SBC
 	VerifyingChecksum,
 	SendingChecksumOK,
-	SendingChecksumError
+	SendingChecksumError,
 #else
 	EraseRetry,
 #endif
 };
 
-void writeBinary();
-[[noreturn]] void Reset(bool success);
+const uint32_t RetryMessageDelay = 200;				// milliseconds
+
+// Shared global variables (defined in iap.cpp)
+extern char readData[blockReadSize];
+extern ProcessState state;
+extern uint32_t flashPos;
+extern size_t bytesRead;
+extern unsigned int retry;
+extern bool haveDataInBuffer;
+
+// Common functions (defined in iap.cpp)
+void delayMs(uint32_t ms) noexcept;
+void MessageF(const char *fmt, ...) noexcept __attribute__ ((format (printf, 1, 2)));
+void writeBinary() noexcept;
+[[noreturn]] void Reset(bool success) noexcept;
+
+#ifdef IAP_VIA_SBC
+uint16_t CRC16(const char *buffer, size_t length) noexcept;
+#endif
+
+#if defined(DEBUG) && DEBUG
+# define debugPrintf(...)		do { MessageF(__VA_ARGS__); } while (false)
+#else
+# define debugPrintf(...)		do { } while (false)
+#endif
 
 #endif	// IAP_H_INCLUDED
