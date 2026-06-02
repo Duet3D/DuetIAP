@@ -3,9 +3,8 @@
 	<name>DuetIAP</name>
 	<comment></comment>
 	<projects>
-		<project>CoreNG</project>
-		<project>RRFLibraries</project>
 		<project>CoreN2G</project>
+		<project>RRFLibraries</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
