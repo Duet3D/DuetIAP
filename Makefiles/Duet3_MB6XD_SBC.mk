@@ -88,7 +88,7 @@ D3MB6XDSBC_CFLAGS := -c -std=gnu99 \
 	$(DEBUG_FLAGS)
 
 # Compiler flags - C++
-D3MB6XDSBC_CXXFLAGS := -c -std=gnu++17 \
+D3MB6XDSBC_CXXFLAGS := -c -std=c++20 \
 	-Os \
 	-mcpu=cortex-m7 \
 	-mthumb \

@@ -82,7 +82,7 @@ SAM4SSD_CFLAGS := -c -std=gnu99 \
 	$(DEBUG_FLAGS)
 
 # Compiler flags - C++ (SAM4S has no hardware FPU)
-SAM4SSD_CXXFLAGS := -c -std=gnu++17 \
+SAM4SSD_CXXFLAGS := -c -std=c++20 \
 	-Os \
 	-mcpu=cortex-m4 \
 	-mthumb \

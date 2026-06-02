@@ -86,7 +86,7 @@ SAM4ESD_CFLAGS := -c -std=gnu99 \
 	$(DEBUG_FLAGS)
 
 # Compiler flags - C++
-SAM4ESD_CXXFLAGS := -c -std=gnu++17 \
+SAM4ESD_CXXFLAGS := -c -std=c++20 \
 	-Os \
 	-mcpu=cortex-m4 \
 	-mthumb \

@@ -82,7 +82,7 @@ SAM4ESBC_CFLAGS := -c -std=gnu99 \
 	$(DEBUG_FLAGS)
 
 # Compiler flags - C++
-SAM4ESBC_CXXFLAGS := -c -std=gnu++17 \
+SAM4ESBC_CXXFLAGS := -c -std=c++20 \
 	-Os \
 	-mcpu=cortex-m4 \
 	-mthumb \
