@@ -311,7 +311,7 @@ static bool sd_mmc_mci_install_mmc(uint8_t slot);
  */
 static bool mmc_spi_op_cond(uint8_t slot)
 {
-	uint32_t retry, resp;
+	uint32_t localRetry, resp;
 	struct sd_mmc_card * const sd_mmc_card = &sd_mmc_cards[slot];
 
 	/*
@@ -319,11 +319,11 @@ static bool mmc_spi_op_cond(uint8_t slot)
 	 * 6 = cmd byte size
 	 * 1 = response byte size
 	 */
-	retry = 7150;
+	localRetry = 7150;
 	do {
 		if (!sd_mmc_card->iface->send_cmd(MMC_SPI_CMD1_SEND_OP_COND, 0)) {
 			sd_mmc_debug("%s: CMD1 SPI Fail - Busy retry %d\n\r",
-					__func__, (int)(7150 - retry));
+					__func__, (int)(7150 - localRetry));
 			return false;
 		}
 		// Check busy flag
@@ -331,7 +331,7 @@ static bool mmc_spi_op_cond(uint8_t slot)
 		if (!(resp & R1_SPI_IDLE)) {
 			break;
 		}
-		if (retry-- == 0) {
+		if (localRetry-- == 0) {
 			sd_mmc_debug("%s: CMD1 Timeout on busy\n\r", __func__);
 			return false;
 		}
@@ -359,7 +359,7 @@ static bool mmc_spi_op_cond(uint8_t slot)
  */
 static bool mmc_mci_op_cond(uint8_t slot)
 {
-	uint32_t retry, resp;
+	uint32_t localRetry, resp;
 	struct sd_mmc_card * const sd_mmc_card = &sd_mmc_cards[slot];
 
 	/*
@@ -367,12 +367,12 @@ static bool mmc_mci_op_cond(uint8_t slot)
 	 * 6 = cmd byte size
 	 * 6 = response byte size
 	 */
-	retry = 4200;
+	localRetry = 4200;
 	do {
 		if (!sd_mmc_card->iface->send_cmd(MMC_MCI_CMD1_SEND_OP_COND,
 				SD_MMC_VOLTAGE_SUPPORT | OCR_ACCESS_MODE_SECTOR)) {
 			sd_mmc_debug("%s: CMD1 MCI Fail - Busy retry %d\n\r",
-					__func__, (int)(4200 - retry));
+					__func__, (int)(4200 - localRetry));
 			return false;
 		}
 		// Check busy flag
@@ -385,7 +385,7 @@ static bool mmc_mci_op_cond(uint8_t slot)
 			}
 			break;
 		}
-		if (retry-- == 0) {
+		if (localRetry-- == 0) {
 			sd_mmc_debug("%s: CMD1 Timeout on busy\n\r", __func__);
 			return false;
 		}
@@ -404,7 +404,7 @@ static bool mmc_mci_op_cond(uint8_t slot)
  */
 static bool sd_spi_op_cond(uint8_t v2, uint8_t slot)
 {
-	uint32_t arg, retry, resp;
+	uint32_t arg, localRetry, resp;
 	struct sd_mmc_card * const sd_mmc_card = &sd_mmc_cards[slot];
 
 	/*
@@ -412,7 +412,7 @@ static bool sd_spi_op_cond(uint8_t v2, uint8_t slot)
 	 * 6 = cmd byte size
 	 * 1 = response byte size
 	 */
-	retry = 7150;
+	localRetry = 7150;
 	do {
 		// CMD55 - Indicate to the card that the next command is an
 		// application specific command rather than a standard command.
@@ -436,7 +436,7 @@ static bool sd_spi_op_cond(uint8_t v2, uint8_t slot)
 			// Card is ready
 			break;
 		}
-		if (retry-- == 0) {
+		if (localRetry-- == 0) {
 			sd_mmc_debug("%s: ACMD41 Timeout on busy, resp32 0x%08x \n\r",
 					__func__, resp);
 			return false;
@@ -465,7 +465,7 @@ static bool sd_spi_op_cond(uint8_t v2, uint8_t slot)
  */
 static bool sd_mci_op_cond(uint8_t v2, uint8_t slot)
 {
-	uint32_t arg, retry, resp;
+	uint32_t arg, localRetry, resp;
 	struct sd_mmc_card * const sd_mmc_card = &sd_mmc_cards[slot];
 
 	/*
@@ -475,7 +475,7 @@ static bool sd_mci_op_cond(uint8_t v2, uint8_t slot)
 	 * 6 = cmd byte size
 	 * 6 = response byte size
 	 */
-	retry = 2100;
+	localRetry = 2100;
 	do {
 		// CMD55 - Indicate to the card that the next command is an
 		// application specific command rather than a standard command.
@@ -502,7 +502,7 @@ static bool sd_mci_op_cond(uint8_t v2, uint8_t slot)
 			}
 			break;
 		}
-		if (retry-- == 0) {
+		if (localRetry-- == 0) {
 			sd_mmc_debug("%s: ACMD41 Timeout on busy, resp32 0x%08x \n\r",
 					__func__, resp);
 			return false;
@@ -1777,8 +1777,8 @@ static bool sd_mmc_mci_install_mmc(uint8_t slot)
 		}
 	}
 
-	uint8_t retry = 10;
-	while (retry--)
+	uint8_t localRetry = 10;
+	while (localRetry--)
 	{
 		// Retry is a WORKAROUND for no compliance card (Atmel Internal ref. MMC19):
 		// These cards seem not ready immediately
