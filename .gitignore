@@ -1,21 +1,7 @@
 # Misc
 .settings/
 
-# Eclipse output folders
-/Duet3MB6HC_RAM/
-/Duet3MB6HC_SBC_RAM/
-/Duet3MB6XD_RAM/
-/Duet3MB6XD_SBC_RAM/
-/SAM4E_RAM/
-/SAM4E_SBC_RAM/
-/SAM4S_RAM/
-/Duet3Mini_SD_RAM/
-/Duet3Mini_SBC_RAM/
-
-# Makefile output folders
-/SAM4E_SD/
-/SAM4E_SBC/
-/SAM4S_SD/
+# Build output folders (shared by Eclipse and Makefile builds)
 /Duet3_MB6HC_SD/
 /Duet3_MB6HC_SBC/
 /Duet3_MB6XD_SD/
@@ -23,3 +9,8 @@
 /Duet3Mini_SD/
 /Duet3Mini_SBC/
 /FMDC_SD/
+
+# Legacy Eclipse-only output folders (no Makefile equivalent)
+/SAM4E_RAM/
+/SAM4E_SBC_RAM/
+/SAM4S_RAM/
