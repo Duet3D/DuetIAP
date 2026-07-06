@@ -19,6 +19,9 @@ void UsbResetTransferState() noexcept;
 // Initialize USB clocks/pins and start the CDC device
 void UsbInit() noexcept;
 
+// Detach the USB device from the host for a clean disconnect before resetting (mirrors SpiShutdown)
+void UsbShutdown() noexcept;
+
 // Wait for USB connection and complete the IAPR handshake. Call after UsbInit().
 void UsbWaitReady() noexcept;
 

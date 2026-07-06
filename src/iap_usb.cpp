@@ -32,6 +32,12 @@ void UsbInit() noexcept
 #endif
 }
 
+void UsbShutdown() noexcept
+{
+	cdc->end();			// stop the device controller so the host sees a clean USB disconnect
+	delayMs(50);		// let the host register the disconnect before the bus reappears as the new firmware or bootloader
+}
+
 void UsbWaitReady() noexcept
 {
 	// Wait for USB host to enumerate and connect (DTR set)

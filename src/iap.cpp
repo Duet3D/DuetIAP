@@ -794,6 +794,12 @@ void writeBinary() noexcept
 		SpiShutdown();
 	}
 #endif
+#ifdef IAP_SBC_USB
+	if (usingUsb)
+	{
+		UsbShutdown();			// give the host a clean USB disconnect before the bus reappears as the new firmware or bootloader
+	}
+#endif
 
 	// No reason to lock the flash again
 	digitalWrite(DiagLedPin, !LedOnPolarity);		// turn the LED off

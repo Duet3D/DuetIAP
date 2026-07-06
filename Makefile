@@ -45,8 +45,8 @@ export DEBUG_FLAGS
 .DEFAULT_GOAL := help
 
 # Available build configurations
-SD_CONFIGS := SAM4E_SD SAM4S_SD Duet3_MB6HC_SD Duet3_MB6XD_SD Duet3Mini_SD FMDC_SD
-SBC_CONFIGS := SAM4E_SBC Duet3_MB6HC_SBC Duet3_MB6XD_SBC Duet3Mini_SBC
+SD_CONFIGS := Duet3_MB6HC_SD Duet3_MB6XD_SD Duet3Mini_SD FMDC_SD
+SBC_CONFIGS := Duet3_MB6HC_SBC Duet3_MB6XD_SBC Duet3Mini_SBC
 CONFIGS := $(SD_CONFIGS) $(SBC_CONFIGS)
 
 # Print available targets
@@ -57,15 +57,12 @@ help:
 	$(Q)echo "====================="
 	$(Q)echo ""
 	$(Q)echo "SD card IAP targets (firmware update from SD):"
-	$(Q)echo "  SAM4E_SD            - Duet 2 WiFi/Ethernet (SAM4E)"
-	$(Q)echo "  SAM4S_SD            - Duet 2 Maestro (SAM4S)"
 	$(Q)echo "  Duet3_MB6HC_SD      - Duet 3 MB6HC (SAME70)"
 	$(Q)echo "  Duet3_MB6XD_SD      - Duet 3 MB6XD (SAME70)"
 	$(Q)echo "  Duet3Mini_SD        - Duet 3 Mini 5+ (SAME54)"
 	$(Q)echo "  FMDC_SD             - FMDC (SAME51)"
 	$(Q)echo ""
 	$(Q)echo "SBC IAP targets (firmware update from SBC via SPI/USB):"
-	$(Q)echo "  SAM4E_SBC           - Duet 2 WiFi/Ethernet (SAM4E, SPI only)"
 	$(Q)echo "  Duet3_MB6HC_SBC     - Duet 3 MB6HC (SAME70, SPI+USB)"
 	$(Q)echo "  Duet3_MB6XD_SBC     - Duet 3 MB6XD (SAME70, SPI+USB)"
 	$(Q)echo "  Duet3Mini_SBC       - Duet 3 Mini 5+ (SAME54, SPI+USB)"
@@ -111,24 +108,12 @@ test-toolchain:
 
 # Common library build rules
 # These are marked as .PHONY so Make always checks if they need rebuilding
-.PHONY: $(WORKSPACE)/CoreN2G/SAM4E_SDHC/libCoreN2G.a \
-        $(WORKSPACE)/CoreN2G/SAM4S_SDHC/libCoreN2G.a \
-        $(WORKSPACE)/CoreN2G/SAME70_SDHC/libCoreN2G.a \
+.PHONY: $(WORKSPACE)/CoreN2G/SAME70_SDHC/libCoreN2G.a \
         $(WORKSPACE)/CoreN2G/SAME70_SDHC_USB/libCoreN2G.a \
         $(WORKSPACE)/CoreN2G/SAME5x_SDHC/libCoreN2G.a \
         $(WORKSPACE)/CoreN2G/SAME5x_SDHC_USB/libCoreN2G.a \
-        $(WORKSPACE)/RRFLibraries/SAM4E/libRRFLibraries.a \
-        $(WORKSPACE)/RRFLibraries/SAM4S/libRRFLibraries.a \
         $(WORKSPACE)/RRFLibraries/SAME70/libRRFLibraries.a \
         $(WORKSPACE)/RRFLibraries/SAME51/libRRFLibraries.a
-
-$(WORKSPACE)/CoreN2G/SAM4E_SDHC/libCoreN2G.a:
-	$(Q)echo "  BUILD   CoreN2G/SAM4E_SDHC"
-	$(Q)$(MAKE) $(VERBOSE) -C $(WORKSPACE)/CoreN2G SAM4E_SDHC
-
-$(WORKSPACE)/CoreN2G/SAM4S_SDHC/libCoreN2G.a:
-	$(Q)echo "  BUILD   CoreN2G/SAM4S_SDHC"
-	$(Q)$(MAKE) $(VERBOSE) -C $(WORKSPACE)/CoreN2G SAM4S_SDHC
 
 $(WORKSPACE)/CoreN2G/SAME70_SDHC/libCoreN2G.a:
 	$(Q)echo "  BUILD   CoreN2G/SAME70_SDHC"
@@ -146,14 +131,6 @@ $(WORKSPACE)/CoreN2G/SAME5x_SDHC_USB/libCoreN2G.a:
 	$(Q)echo "  BUILD   CoreN2G/SAME5x_SDHC_USB"
 	$(Q)$(MAKE) $(VERBOSE) -C $(WORKSPACE)/CoreN2G SAME5x_SDHC_USB
 
-$(WORKSPACE)/RRFLibraries/SAM4E/libRRFLibraries.a:
-	$(Q)echo "  BUILD   RRFLibraries/SAM4E"
-	$(Q)$(MAKE) $(VERBOSE) -C $(WORKSPACE)/RRFLibraries SAM4E
-
-$(WORKSPACE)/RRFLibraries/SAM4S/libRRFLibraries.a:
-	$(Q)echo "  BUILD   RRFLibraries/SAM4S"
-	$(Q)$(MAKE) $(VERBOSE) -C $(WORKSPACE)/RRFLibraries SAM4S
-
 $(WORKSPACE)/RRFLibraries/SAME70/libRRFLibraries.a:
 	$(Q)echo "  BUILD   RRFLibraries/SAME70"
 	$(Q)$(MAKE) $(VERBOSE) -C $(WORKSPACE)/RRFLibraries SAME70
@@ -163,9 +140,6 @@ $(WORKSPACE)/RRFLibraries/SAME51/libRRFLibraries.a:
 	$(Q)$(MAKE) $(VERBOSE) -C $(WORKSPACE)/RRFLibraries SAME51
 
 # Include board-specific makefiles
--include Makefiles/SAM4E_SD.mk
--include Makefiles/SAM4E_SBC.mk
--include Makefiles/SAM4S_SD.mk
 -include Makefiles/Duet3_MB6HC_SD.mk
 -include Makefiles/Duet3_MB6HC_SBC.mk
 -include Makefiles/Duet3_MB6XD_SD.mk
