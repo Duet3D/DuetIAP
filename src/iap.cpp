@@ -506,6 +506,7 @@ void writeBinary() noexcept
 					{
 						eraseRetryCount = 0;
 					}
+					lastEraseRetryPos = flashPos;
 					retry = 0;
 					state = EraseRetry;
 					break;
