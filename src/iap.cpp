@@ -60,6 +60,7 @@ size_t reportNextPercent = reportPercentIncrement;
 
 #ifdef IAP_VIA_SBC
 static bool usingUsb = false;
+static unsigned int crcRetryCount = 0;		// number of whole-image reflash attempts after a checksum mismatch
 #endif
 
 // Our own version of delay() that keeps the LED and USB up to date
@@ -446,90 +447,117 @@ void writeBinary() noexcept
 			bytesWritten = 0;
 		}
 
-		// Write another page
+		// Write another page, unless the firmware region is already full
 		{
 			static bool writeSuceeded = false;			// static so that the retry message can say whether the write or the verify failed
+			bool endOfTransfer = false;
 
-			debugPrintf("Writing 0x%08x - 0x%08x", flashPos, flashPos + pageSize - 1);
-			if (retry != 0)
+			if (flashPos >= FirmwareFlashEnd)
 			{
-				MessageF("Flash write%s retry #%u at address %08" PRIx32, ((writeSuceeded) ? "/verify" : ""), retry, flashPos - IFLASH_ADDR);
-				delayMs(RetryMessageDelay);
+				// The firmware region is full. A further block is either the transport's trailing end-of-transfer
+				// padding (an image that exactly fills the region) or a sender streaming more than the region can
+				// hold; either way there is nothing left to program, so finish rather than writing past FirmwareFlashEnd
+				endOfTransfer = true;
 			}
+			else
+			{
+				debugPrintf("Writing 0x%08x - 0x%08x", flashPos, flashPos + pageSize - 1);
+				if (retry != 0)
+				{
+					MessageF("Flash write%s retry #%u at address %08" PRIx32, ((writeSuceeded) ? "/verify" : ""), retry, flashPos - IFLASH_ADDR);
+					delayMs(RetryMessageDelay);
+				}
 
-			writeSuceeded = Flash::Write(flashPos, pageSize, reinterpret_cast<const uint32_t *>(readData + bytesWritten));
-			if (!writeSuceeded)
-			{
-				MessageF("Flash write failed: pos=%08" PRIx32 " size=%" PRIu32 " err=%08" PRIx32, flashPos, pageSize, Flash::GetLastFlashError());
-				++retry;
-				break;
-			}
+				writeSuceeded = Flash::Write(flashPos, pageSize, reinterpret_cast<const uint32_t *>(readData + bytesWritten));
+				if (!writeSuceeded)
+				{
+					MessageF("Flash write failed: pos=%08" PRIx32 " size=%" PRIu32 " err=%08" PRIx32, flashPos, pageSize, Flash::GetLastFlashError());
+					++retry;
+					break;
+				}
 
 #ifndef IAP_VIA_SBC
-			// Verify the written data. Our data is aligned, so we can compare words.
-			// In SBC mode this happens at the end of the flash process using a CRC checksum.
-			const int cmp = CompareMemory(reinterpret_cast<const uint32_t*>(flashPos), (const uint32_t*)(readData + bytesWritten), pageSize >> 2);
-			if (cmp == 1)
-			{
-				// There are some bits reading as 1 that should be zero
-				MessageF("Flash compare failed, missing zeros");
-				++retry;
-				break;
-			}
-
-			if (cmp != 0)
-			{
-				// There are some bits reading as 0 that should be 1. Erase the sector and start again from the beginning of this sector.
-				MessageF("Flash compare failed, missing ones");
-				flashPos = FindSectorStart(flashPos);
-				if (flashPos == lastEraseRetryPos)
+				// Verify the written data. Our data is aligned, so we can compare words.
+				// In SBC mode this happens at the end of the flash process using a CRC checksum.
+				const int cmp = CompareMemory(reinterpret_cast<const uint32_t*>(flashPos), (const uint32_t*)(readData + bytesWritten), pageSize >> 2);
+				if (cmp == 1)
 				{
-					++eraseRetryCount;
-					if (eraseRetryCount == MaxEraseRetries)
-					{
-						MessageF("ERROR: too many erase sector retries at pos %" PRIu32, flashPos);
-						Reset(false);
-					}
+					// There are some bits reading as 1 that should be zero
+					MessageF("Flash compare failed, missing zeros");
+					++retry;
+					break;
 				}
-				else
-				{
-					eraseRetryCount = 0;
-				}
-				retry = 0;
-				state = EraseRetry;
-				break;
-			}
-#endif
 
-			retry = 0;
-			bytesWritten += pageSize;
-			flashPos += pageSize;
-			ShowProgress();
-			if (bytesWritten == blockReadSize)
-			{
-				haveDataInBuffer = false;
-				if (bytesRead < blockReadSize)
+				if (cmp != 0)
 				{
-#ifdef IAP_VIA_SBC
-					// Set up to receive the verification request
-# ifdef IAP_SBC_USB
-					if (usingUsb)
+					// There are some bits reading as 0 that should be 1. Erase the sector and start again from the beginning of this sector.
+					MessageF("Flash compare failed, missing ones");
+					flashPos = FindSectorStart(flashPos);
+					if (flashPos == lastEraseRetryPos)
 					{
-						UsbSetupVerifyTransfer();
+						++eraseRetryCount;
+						if (eraseRetryCount == MaxEraseRetries)
+						{
+							MessageF("ERROR: too many erase sector retries at pos %" PRIu32, flashPos);
+							Reset(false);
+						}
 					}
 					else
+					{
+						eraseRetryCount = 0;
+					}
+					retry = 0;
+					state = EraseRetry;
+					break;
+				}
+#endif
+
+				retry = 0;
+				bytesWritten += pageSize;
+				flashPos += pageSize;
+				ShowProgress();
+				if (bytesWritten == blockReadSize)
+				{
+					haveDataInBuffer = false;
+
+					// SD and SPI mark the final block with a short read; the USB transport always receives
+					// full fixed-size blocks and reports completion separately, so it can end on a full block
+					bool lastBlock = bytesRead < blockReadSize;
+#ifdef IAP_SBC_USB
+					if (usingUsb && UsbTransferComplete())
+					{
+						lastBlock = true;
+					}
+#endif
+					if (lastBlock)
+					{
+						endOfTransfer = true;
+					}
+				}
+			}
+
+			if (endOfTransfer)
+			{
+				haveDataInBuffer = false;
+#ifdef IAP_VIA_SBC
+				// Set up to receive the verification request
+# ifdef IAP_SBC_USB
+				if (usingUsb)
+				{
+					UsbSetupVerifyTransfer();
+				}
+				else
 # endif
 # ifdef IAP_SBC_SPI
-					{
-						SpiSetupVerifyTransfer();
-					}
-# endif
-					state = VerifyingChecksum;
-#else
-					SdClose();
-					state = LockingFlash;
-#endif
+				{
+					SpiSetupVerifyTransfer();
 				}
+# endif
+				state = VerifyingChecksum;
+#else
+				SdClose();
+				state = LockingFlash;
+#endif
 			}
 		}
 		break;
@@ -688,8 +716,17 @@ void writeBinary() noexcept
 			}
 			else if (complete)
 			{
-				// Attempt to flash the firmware again. Reset the transport state so the
-				// next UsbReadBlock call starts counting bytes from zero (otherwise the
+				++crcRetryCount;
+				if (crcRetryCount >= MaxCrcRetries)
+				{
+					// Reflashing the whole image is not converging (persistent bad sector or corrupt source), so give
+					// up rather than looping forever - the WritingUpgrade retry counter is reset on every successful
+					// page write and so never catches this
+					MessageF("ERROR: firmware checksum still wrong after %u attempts", crcRetryCount);
+					Reset(false);
+				}
+
+				// Reset the transport state so the next read starts counting bytes from zero (otherwise the USB
 				// length-based end-of-transfer detection sees the previous cycle's counter)
 # ifdef IAP_SBC_USB
 				if (usingUsb)
@@ -698,13 +735,11 @@ void writeBinary() noexcept
 				}
 # endif
 				flashPos = FirmwareFlashStart;
-#if SAME70
-				// For some reason the SAME70 fails to boot *with a valid firmware image* after a page has been rewritten.
-				// So we must erase the entire chip again and then reflash everything page by page.
+
+				// Erase the whole region before rewriting: Flash::Write requires pre-erased memory and NVMCTRL/EEFC
+				// can only clear bits, so rewriting programmed pages cannot repair a corrupted image. SAME70 also
+				// needs a full erase to avoid a boot failure after a page has been rewritten
 				state = ErasingFlash;
-#else
-				state = WritingUpgrade;
-#endif
 				reportNextPercent = reportPercentIncrement;
 				retry = 0;
 			}

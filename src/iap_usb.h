@@ -29,6 +29,9 @@ void UsbPoll() noexcept;
 // Returns true when a block is ready with bytesRead set.
 bool UsbReadBlock() noexcept;
 
+// True once all expectedFirmwareLength bytes have been received
+bool UsbTransferComplete() noexcept;
+
 // Set up to receive the FlashVerifyRequest over USB
 void UsbSetupVerifyTransfer() noexcept;
 

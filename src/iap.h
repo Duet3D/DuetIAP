@@ -260,6 +260,7 @@ constexpr uint32_t FirmwareFlashEnd = IFLASH_ADDR + IFLASH_SIZE;
 constexpr size_t blockReadSize = 2048;				// Read and write only 2 KiB of data at once (must be multiple of IFLASH_PAGE_SIZE)
 constexpr unsigned int MaxRetries = 5;				// Allow 5 retries max if anything goes wrong
 constexpr unsigned int MaxEraseRetries = 3;
+constexpr unsigned int MaxCrcRetries = 3;			// Max whole-image reflash attempts after a checksum mismatch (SBC)
 
 #include <General/IapInfo.h>
 

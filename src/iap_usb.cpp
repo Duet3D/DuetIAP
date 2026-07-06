@@ -171,9 +171,9 @@ bool UsbReadBlock() noexcept
 		usbTotalBytesReceived += blockReadSize;
 		usbReadySent = false;
 
-		// End-of-transfer is known from expectedFirmwareLength (received during the handshake);
-		// setting bytesRead < blockReadSize triggers the state machine to transition to verify
-		// after writing this block. The "real" bytes in the final block equal firmwareLength - prevTotal
+		// The final block is the one whose running total reaches expectedFirmwareLength (sent in the handshake).
+		// A short final block is flagged by bytesRead < blockReadSize; when the firmware length is an exact
+		// multiple of blockReadSize the final block is full, so completion is reported through UsbTransferComplete
 		if (usbTotalBytesReceived >= expectedFirmwareLength)
 		{
 			bytesRead = expectedFirmwareLength - prevTotal;
@@ -193,6 +193,13 @@ bool UsbReadBlock() noexcept
 	}
 
 	return false;
+}
+
+// True once every firmware byte has been received. Lets the state machine detect an exactly-full final block,
+// which bytesRead < blockReadSize cannot express
+bool UsbTransferComplete() noexcept
+{
+	return usbTotalBytesReceived >= expectedFirmwareLength;
 }
 
 void UsbSetupVerifyTransfer() noexcept
