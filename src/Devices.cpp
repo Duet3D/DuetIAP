@@ -216,6 +216,9 @@ extern "C" [[noreturn]] void vAssertCalled(uint32_t line, const char *file) noex
 // syscalls.h must be included by exactly one .cpp file in the project
 #include <syscalls.h>
 
+// The stack doesn't live here, the linker script only uses this section to size the stack and place _sstack
+uint32_t dummySystemStack[SystemStackSize] __attribute__ ((section (".stack")));
+
 [[noreturn]] void OutOfMemoryHandler() noexcept
 {
 	while (true) { }
