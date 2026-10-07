@@ -1,0 +1,196 @@
+name: Build and release
+
+on:
+  push:
+    branches:
+      - master
+      - 3.7-dev
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  ARM_TOOLCHAIN: arm-gnu-toolchain-15.2.rel1-x86_64-arm-none-eabi
+
+jobs:
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.get.outputs.version }}
+      prerelease: ${{ steps.get.outputs.prerelease }}
+      release: ${{ steps.get.outputs.release }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Read version and check whether it is already released"
+        id: get
+        run: |
+          version=$(sed -n 's/^#define VERSION_TEXT\s\+"\([^"]\+\)".*/\1/p' src/Version.h)
+          if [ -z "$version" ]; then
+            echo "Could not read VERSION_TEXT from src/Version.h" >&2
+            exit 1
+          fi
+          echo "Version $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          identifier=${version#*-}
+          case "${identifier%%.*}" in
+            alpha|beta|rc)
+              echo "prerelease=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "prerelease=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+          # A lookup that fails for any other reason than a missing tag must stop the run, else an
+          # unreachable remote reads as "not released yet" and releases on top of the one already published
+          if ! tags=$(git ls-remote --tags origin "refs/tags/$version"); then
+            echo "Could not reach the remote to look up tag $version" >&2
+            exit 1
+          fi
+          if [ -n "$tags" ]; then
+            echo "$version is already tagged, skipping the release"
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "$version is new, creating a release"
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: version
+    runs-on: ubuntu-24.04
+    steps:
+      # Build the branch matching this workflow run (github.ref_name) in each dependency repo,
+      # falling back to the repo's tracked branch when that branch doesn't exist there
+      - name: "Resolve branch refs"
+        id: refs
+        env:
+          REF: ${{ github.ref_name }}
+        run: |
+          resolve() {
+            # Exit code 2 means the branch is genuinely absent, anything else is a failed lookup. Falling back
+            # on those would build against the wrong sources and release them under this version
+            status=0
+            git ls-remote --exit-code --heads "https://github.com/Duet3D/$1.git" "$REF" >/dev/null 2>&1 || status=$?
+            case $status in
+              0)
+                echo "$1: $REF"
+                echo "$1=$REF" >> "$GITHUB_OUTPUT"
+                ;;
+              2)
+                echo "$1: $REF not found, using $2"
+                echo "$1=$2" >> "$GITHUB_OUTPUT"
+                ;;
+              *)
+                echo "Could not reach $1 to look up $REF" >&2
+                exit 1
+                ;;
+            esac
+          }
+          resolve CoreN2G 3.7-dev
+          resolve RRFLibraries 3.7-dev
+
+      - name: "Check out CoreN2G"
+        uses: actions/checkout@v7
+        with:
+          repository: "Duet3D/CoreN2G"
+          ref: ${{ steps.refs.outputs.CoreN2G }}
+          path: "./CoreN2G"
+
+      - name: "Check out RRFLibraries"
+        uses: actions/checkout@v7
+        with:
+          repository: "Duet3D/RRFLibraries"
+          ref: ${{ steps.refs.outputs.RRFLibraries }}
+          path: "./RRFLibraries"
+
+      - name: "Check out DuetIAP"
+        uses: actions/checkout@v7
+        with:
+          path: "./DuetIAP"
+
+      # The commit of every source repository that goes into these binaries, as a CycloneDX software BOM.
+      # Checked-out submodules are listed as components of their parent; recorded but uninitialised
+      # submodules contribute no code and are skipped
+      - name: "Generate software BOM"
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          mkdir -p sbom
+          for repo in CoreN2G DuetIAP RRFLibraries; do
+            jq -n --arg name "$repo" --arg ref "$(git -C "./$repo" rev-parse --abbrev-ref HEAD)" --arg sha "$(git -C "./$repo" rev-parse HEAD)" \
+              '{type: "library", name: $name, version: $sha, purl: ("pkg:github/Duet3D/" + $name + "@" + $sha), externalReferences: [{type: "vcs", url: ("https://github.com/Duet3D/" + $name)}], properties: [{name: "duet3d:ref", value: $ref}]}'
+            git -C "./$repo" submodule status --recursive | while read -r sha path _; do
+              case $sha in -*) continue;; esac
+              jq -n --arg parent "$repo" --arg path "${path#*/}" --arg sha "${sha#[+U]}" \
+                '{type: "library", name: ($parent + "/" + $path), version: $sha, properties: [{name: "duet3d:submoduleOf", value: $parent}]}'
+            done
+          done > sbom/components.jsonl
+          jq -n --arg version "$VERSION" --arg toolchain "$ARM_TOOLCHAIN" --slurpfile components sbom/components.jsonl \
+            '{bomFormat: "CycloneDX", specVersion: "1.6", version: 1, metadata: {timestamp: (now | todateiso8601), component: {type: "firmware", name: "DuetIAP", version: $version}, tools: {components: [{type: "application", name: "arm-gnu-toolchain", version: ($toolchain | sub("^arm-gnu-toolchain-"; "") | sub("-x86_64-arm-none-eabi$"; ""))}]}}, components: $components}' \
+            > "sbom/DuetIAP-$VERSION-sbom.json"
+          rm sbom/components.jsonl
+          jq . "sbom/DuetIAP-$VERSION-sbom.json"
+
+      - name: "Attach software BOM"
+        uses: actions/upload-artifact@v7
+        with:
+          name: sbom
+          path: ./sbom/DuetIAP-*-sbom.json
+
+      - name: "Set up ARM GCC"
+        run: |
+          curl -L -o "./$ARM_TOOLCHAIN.tar.xz" "https://developer.arm.com/-/media/Files/downloads/gnu/15.2.rel1/binrel/$ARM_TOOLCHAIN.tar.xz"
+          tar -xf "./$ARM_TOOLCHAIN.tar.xz"
+
+      - name: "Build IAP binaries"
+        working-directory: ./DuetIAP
+        env:
+          CROSS_COMPILE: ${{ github.workspace }}/${{ env.ARM_TOOLCHAIN }}/bin/arm-none-eabi-
+        run: |
+          make -j"$(nproc)" all
+
+      - name: "Arrange files"
+        run: |
+          mkdir -p binaries symbols
+          cp ./DuetIAP/*/Duet3_*iap32_*.bin ./binaries/
+          cp ./DuetIAP/*/Duet3_*iap32_*.map ./symbols/
+          ls -l ./binaries ./symbols
+
+      - name: "Attach binaries"
+        uses: actions/upload-artifact@v7
+        with:
+          name: binaries
+          path: ./binaries/*.bin
+          compression-level: 0
+
+      - name: "Attach symbols"
+        uses: actions/upload-artifact@v7
+        with:
+          name: symbols
+          path: ./symbols/*.map
+
+  release:
+    needs: [version, build]
+    if: needs.version.outputs.release == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: binaries
+          path: ./release
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: sbom
+          path: ./release
+
+      - name: "Create release"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          if [ "${{ needs.version.outputs.prerelease }}" = "true" ]; then
+            prerelease=--prerelease
+          fi
+          gh release create "$VERSION" --repo "${{ github.repository }}" --target "${{ github.sha }}" --title "Version $VERSION" --generate-notes $prerelease ./release/*
