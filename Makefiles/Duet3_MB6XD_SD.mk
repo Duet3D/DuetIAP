@@ -8,12 +8,9 @@ D3MB6XDSD_TARGET_ELF := $(D3MB6XDSD_BUILD_DIR)/$(D3MB6XDSD_TARGET_NAME).elf
 D3MB6XDSD_TARGET_BIN := $(D3MB6XDSD_BUILD_DIR)/$(D3MB6XDSD_TARGET_NAME).bin
 D3MB6XDSD_TARGET_MAP := $(D3MB6XDSD_BUILD_DIR)/$(D3MB6XDSD_TARGET_NAME).map
 
-# Workspace root
-WORKSPACE := ..
-
 # Library dependencies
-D3MB6XDSD_COREN2G_LIB := $(WORKSPACE)/CoreN2G/SAME70_SDHC/libCoreN2G.a
-D3MB6XDSD_RRFLIBS_LIB := $(WORKSPACE)/RRFLibraries/SAME70/libRRFLibraries.a
+D3MB6XDSD_COREN2G_LIB := $(LIBRARIES_DIR)/CoreN2G/SAME70_SDHC/libCoreN2G.a
+D3MB6XDSD_RRFLIBS_LIB := $(LIBRARIES_DIR)/RRFLibraries/SAME70/libRRFLibraries.a
 
 # Source directories
 D3MB6XDSD_SRC_DIR := src
@@ -26,35 +23,35 @@ D3MB6XDSD_C_SRCS := $(shell find $(D3MB6XDSD_SRC_DIR) -name '*.c')
 # Include paths - C compiler
 D3MB6XDSD_C_INCLUDES := \
 	-I$(D3MB6XDSD_SRC_DIR) \
-	-I$(WORKSPACE)/CoreN2G \
-	-I$(WORKSPACE)/CoreN2G/src \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70 \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/SAME70 \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/common/utils \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/sam/drivers \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/cmsis/same70/include \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/header_files \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/preprocessor \
-	-I$(WORKSPACE)/CoreN2G/src/arm/CMSIS/5.4.0/CMSIS/Core/Include \
-	-I$(WORKSPACE)/RRFLibraries/src
+	-I$(LIBRARIES_DIR)/CoreN2G \
+	-I$(LIBRARIES_DIR)/CoreN2G/src \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70 \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/SAME70 \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/common/utils \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/sam/drivers \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/cmsis/same70/include \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/header_files \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/preprocessor \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/arm/CMSIS/5.4.0/CMSIS/Core/Include \
+	-I$(LIBRARIES_DIR)/RRFLibraries/src
 
 # Include paths - C++ compiler
 D3MB6XDSD_CXX_INCLUDES := \
-	-I$(WORKSPACE)/CoreN2G/src \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70 \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/common/utils \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/sam/drivers \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/cmsis/same70/include \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/header_files \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/preprocessor \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/SAME70 \
-	-I$(WORKSPACE)/CoreN2G/src/arm/CMSIS/5.4.0/CMSIS/Core/Include \
+	-I$(LIBRARIES_DIR)/CoreN2G/src \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70 \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/common/utils \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/sam/drivers \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/cmsis/same70/include \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/header_files \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/preprocessor \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/SAME70 \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/arm/CMSIS/5.4.0/CMSIS/Core/Include \
 	-I$(D3MB6XDSD_SRC_DIR)/Libraries/Fatfs \
-	-I$(WORKSPACE)/RRFLibraries/src
+	-I$(LIBRARIES_DIR)/RRFLibraries/src
 
 # Preprocessor defines - C
 D3MB6XDSD_C_DEFINES := \
@@ -134,8 +131,8 @@ D3MB6XDSD_LDFLAGS2 := \
 
 # Library search paths and libraries
 D3MB6XDSD_LDLIBS := \
-	-L$(WORKSPACE)/CoreN2G/SAME70_SDHC \
-	-L$(WORKSPACE)/RRFLibraries/SAME70 \
+	-L$(LIBRARIES_DIR)/CoreN2G/SAME70_SDHC \
+	-L$(LIBRARIES_DIR)/RRFLibraries/SAME70 \
 	-lCoreN2G \
 	-lRRFLibraries \
 	-lsupc++
