@@ -16,9 +16,9 @@ FMDCSD_RRFLIBS_LIB := $(LIBRARIES_DIR)/RRFLibraries/SAME51/libRRFLibraries.a
 FMDCSD_SRC_DIR := src
 
 # Find all source files (SD builds include Libraries/)
-FMDCSD_CPP_SRCS := $(shell find $(FMDCSD_SRC_DIR) -name '*.cpp')
+FMDCSD_CPP_SRCS := $(sort $(shell find $(FMDCSD_SRC_DIR) -name '*.cpp'))
 
-FMDCSD_C_SRCS := $(shell find $(FMDCSD_SRC_DIR) -name '*.c')
+FMDCSD_C_SRCS := $(sort $(shell find $(FMDCSD_SRC_DIR) -name '*.c'))
 
 # Include paths - C compiler
 FMDCSD_C_INCLUDES := \

@@ -16,9 +16,9 @@ D3MB6XDSD_RRFLIBS_LIB := $(LIBRARIES_DIR)/RRFLibraries/SAME70/libRRFLibraries.a
 D3MB6XDSD_SRC_DIR := src
 
 # Find all source files (SD builds include Libraries/)
-D3MB6XDSD_CPP_SRCS := $(shell find $(D3MB6XDSD_SRC_DIR) -name '*.cpp')
+D3MB6XDSD_CPP_SRCS := $(sort $(shell find $(D3MB6XDSD_SRC_DIR) -name '*.cpp'))
 
-D3MB6XDSD_C_SRCS := $(shell find $(D3MB6XDSD_SRC_DIR) -name '*.c')
+D3MB6XDSD_C_SRCS := $(sort $(shell find $(D3MB6XDSD_SRC_DIR) -name '*.c'))
 
 # Include paths - C compiler
 D3MB6XDSD_C_INCLUDES := \

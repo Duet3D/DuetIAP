@@ -16,11 +16,11 @@ D3MB6HCSBC_RRFLIBS_LIB := $(LIBRARIES_DIR)/RRFLibraries/SAME70/libRRFLibraries.a
 D3MB6HCSBC_SRC_DIR := src
 
 # Find all source files (SBC builds exclude Libraries/ and the bare-metal USB driver)
-D3MB6HCSBC_CPP_SRCS := $(shell find $(D3MB6HCSBC_SRC_DIR) -name '*.cpp' \
-	! -path '*/Libraries/*')
+D3MB6HCSBC_CPP_SRCS := $(sort $(shell find $(D3MB6HCSBC_SRC_DIR) -name '*.cpp' \
+	! -path '*/Libraries/*'))
 
-D3MB6HCSBC_C_SRCS := $(shell find $(D3MB6HCSBC_SRC_DIR) -name '*.c' \
-	! -path '*/Libraries/*')
+D3MB6HCSBC_C_SRCS := $(sort $(shell find $(D3MB6HCSBC_SRC_DIR) -name '*.c' \
+	! -path '*/Libraries/*'))
 
 # Include paths - C compiler
 D3MB6HCSBC_C_INCLUDES := \

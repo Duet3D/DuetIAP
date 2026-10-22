@@ -16,9 +16,9 @@ D3MINISD_RRFLIBS_LIB := $(LIBRARIES_DIR)/RRFLibraries/SAME51/libRRFLibraries.a
 D3MINISD_SRC_DIR := src
 
 # Find all source files (SD builds include Libraries/)
-D3MINISD_CPP_SRCS := $(shell find $(D3MINISD_SRC_DIR) -name '*.cpp')
+D3MINISD_CPP_SRCS := $(sort $(shell find $(D3MINISD_SRC_DIR) -name '*.cpp'))
 
-D3MINISD_C_SRCS := $(shell find $(D3MINISD_SRC_DIR) -name '*.c')
+D3MINISD_C_SRCS := $(sort $(shell find $(D3MINISD_SRC_DIR) -name '*.c'))
 
 # Include paths - C compiler
 D3MINISD_C_INCLUDES := \

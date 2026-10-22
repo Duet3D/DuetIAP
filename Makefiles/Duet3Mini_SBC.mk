@@ -16,11 +16,11 @@ D3MINISBC_RRFLIBS_LIB := $(LIBRARIES_DIR)/RRFLibraries/SAME51/libRRFLibraries.a
 D3MINISBC_SRC_DIR := src
 
 # Find all source files (SBC builds exclude Libraries/ and the bare-metal USB driver)
-D3MINISBC_CPP_SRCS := $(shell find $(D3MINISBC_SRC_DIR) -name '*.cpp' \
-	! -path '*/Libraries/*')
+D3MINISBC_CPP_SRCS := $(sort $(shell find $(D3MINISBC_SRC_DIR) -name '*.cpp' \
+	! -path '*/Libraries/*'))
 
-D3MINISBC_C_SRCS := $(shell find $(D3MINISBC_SRC_DIR) -name '*.c' \
-	! -path '*/Libraries/*')
+D3MINISBC_C_SRCS := $(sort $(shell find $(D3MINISBC_SRC_DIR) -name '*.c' \
+	! -path '*/Libraries/*'))
 
 # Include paths - C compiler
 D3MINISBC_C_INCLUDES := \
