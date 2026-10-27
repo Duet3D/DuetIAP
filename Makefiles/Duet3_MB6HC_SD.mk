@@ -78,6 +78,7 @@ D3MB6HCSD_CFLAGS := -c -std=gnu99 \
 	-nostdlib \
 	-Wundef \
 	-Wdouble-promotion \
+	-Wall \
 	-fsingle-precision-constant \
 	$(D3MB6HCSD_C_INCLUDES) \
 	$(D3MB6HCSD_C_DEFINES) \
@@ -100,6 +101,7 @@ D3MB6HCSD_CXXFLAGS := -c -std=c++20 \
 	-nostdlib \
 	-Wundef \
 	-Wdouble-promotion \
+	-Wall \
 	-fsingle-precision-constant \
 	$(D3MB6HCSD_CXX_INCLUDES) \
 	$(D3MB6HCSD_CXX_DEFINES) \
@@ -134,8 +136,7 @@ D3MB6HCSD_LDLIBS := \
 	-L$(LIBRARIES_DIR)/CoreN2G/SAME70_SDHC \
 	-L$(LIBRARIES_DIR)/RRFLibraries/SAME70 \
 	-lCoreN2G \
-	-lRRFLibraries \
-	-lsupc++
+	-lRRFLibraries
 
 D3MB6HCSD_LDLIBS_POST := -Wl,--end-group -lm
 

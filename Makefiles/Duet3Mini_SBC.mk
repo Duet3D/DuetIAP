@@ -76,6 +76,7 @@ D3MINISBC_CFLAGS := -c -std=gnu99 \
 	-nostdlib \
 	-Wundef \
 	-Wdouble-promotion \
+	-Wall \
 	-fsingle-precision-constant \
 	$(D3MINISBC_C_INCLUDES) \
 	$(D3MINISBC_C_DEFINES) \
@@ -97,6 +98,7 @@ D3MINISBC_CXXFLAGS := -c -std=c++20 \
 	-nostdlib \
 	-Wundef \
 	-Wdouble-promotion \
+	-Wall \
 	-fsingle-precision-constant \
 	$(D3MINISBC_CXX_INCLUDES) \
 	$(D3MINISBC_CXX_DEFINES) \
@@ -131,8 +133,7 @@ D3MINISBC_LDLIBS := \
 	-L$(LIBRARIES_DIR)/CoreN2G/SAME5x_SDHC_USB \
 	-L$(LIBRARIES_DIR)/RRFLibraries/SAME51 \
 	-lCoreN2G \
-	-lRRFLibraries \
-	-lsupc++
+	-lRRFLibraries
 
 D3MINISBC_LDLIBS_POST := -Wl,--end-group -lm
 

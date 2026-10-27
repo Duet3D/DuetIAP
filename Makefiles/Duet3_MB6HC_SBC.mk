@@ -77,6 +77,7 @@ D3MB6HCSBC_CFLAGS := -c -std=gnu99 \
 	-nostdlib \
 	-Wundef \
 	-Wdouble-promotion \
+	-Wall \
 	-fsingle-precision-constant \
 	$(D3MB6HCSBC_C_INCLUDES) \
 	$(D3MB6HCSBC_C_DEFINES) \
@@ -99,6 +100,7 @@ D3MB6HCSBC_CXXFLAGS := -c -std=c++20 \
 	-nostdlib \
 	-Wundef \
 	-Wdouble-promotion \
+	-Wall \
 	-fsingle-precision-constant \
 	$(D3MB6HCSBC_CXX_INCLUDES) \
 	$(D3MB6HCSBC_CXX_DEFINES) \
@@ -133,8 +135,7 @@ D3MB6HCSBC_LDLIBS := \
 	-L$(LIBRARIES_DIR)/CoreN2G/SAME70_SDHC_USB \
 	-L$(LIBRARIES_DIR)/RRFLibraries/SAME70 \
 	-lCoreN2G \
-	-lRRFLibraries \
-	-lsupc++
+	-lRRFLibraries
 
 D3MB6HCSBC_LDLIBS_POST := -Wl,--end-group -lm
 

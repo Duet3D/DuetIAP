@@ -69,6 +69,7 @@ FMDCSD_CFLAGS := -c -std=gnu99 \
 	-nostdlib \
 	-Wundef \
 	-Wdouble-promotion \
+	-Wall \
 	-fsingle-precision-constant \
 	$(FMDCSD_C_INCLUDES) \
 	$(FMDCSD_C_DEFINES) \
@@ -90,6 +91,7 @@ FMDCSD_CXXFLAGS := -c -std=c++20 \
 	-nostdlib \
 	-Wundef \
 	-Wdouble-promotion \
+	-Wall \
 	-fsingle-precision-constant \
 	$(FMDCSD_CXX_INCLUDES) \
 	$(FMDCSD_CXX_DEFINES) \
@@ -123,8 +125,7 @@ FMDCSD_LDLIBS := \
 	-L$(LIBRARIES_DIR)/CoreN2G/SAME5x_SDHC \
 	-L$(LIBRARIES_DIR)/RRFLibraries/SAME51 \
 	-lCoreN2G \
-	-lRRFLibraries \
-	-lsupc++
+	-lRRFLibraries
 
 FMDCSD_LDLIBS_POST := -Wl,--end-group -lm
 

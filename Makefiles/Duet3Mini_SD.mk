@@ -69,6 +69,8 @@ D3MINISD_CFLAGS := -c -std=gnu99 \
 	-nostdlib \
 	-Wundef \
 	-Wdouble-promotion \
+	-Wall \
+	-Wshadow \
 	-fsingle-precision-constant \
 	$(D3MINISD_C_INCLUDES) \
 	$(D3MINISD_C_DEFINES) \
@@ -90,6 +92,10 @@ D3MINISD_CXXFLAGS := -c -std=c++20 \
 	-nostdlib \
 	-Wundef \
 	-Wdouble-promotion \
+	-Wall \
+	-Wshadow \
+	-Wnoexcept \
+	-Wsign-conversion \
 	-fsingle-precision-constant \
 	$(D3MINISD_CXX_INCLUDES) \
 	$(D3MINISD_CXX_DEFINES) \
@@ -123,8 +129,7 @@ D3MINISD_LDLIBS := \
 	-L$(LIBRARIES_DIR)/CoreN2G/SAME5x_SDHC \
 	-L$(LIBRARIES_DIR)/RRFLibraries/SAME51 \
 	-lCoreN2G \
-	-lRRFLibraries \
-	-lsupc++
+	-lRRFLibraries
 
 D3MINISD_LDLIBS_POST := -Wl,--end-group -lm
 

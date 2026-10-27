@@ -19,9 +19,6 @@ duet_firmware_executable(${DUET_BOARD}
     OUTPUT_NAME ${IAP_OUTPUT}
     LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/src/LinkerScripts/${IAP_LINKER_SCRIPT}"
     SOURCES ${_cxx} ${_c})
-# The IAP links libsupc++ for the C++ runtime, so it is linked by the C driver rather than g++,
-# which would add libstdc++
-set_target_properties(${DUET_BOARD} PROPERTIES LINKER_LANGUAGE C)
 
 target_include_directories(${DUET_BOARD} PRIVATE src src/Libraries/Fatfs)
 
@@ -30,12 +27,21 @@ target_compile_definitions(${DUET_BOARD} PRIVATE
     ${IAP_DEFINES}
     $<$<COMPILE_LANGUAGE:C>:noexcept=>)
 
+set(_cxx_options
+    -fno-threadsafe-statics
+    -fno-rtti
+    -fno-exceptions
+    -Wnoexcept
+    -Wsign-conversion)
+
 target_compile_options(${DUET_BOARD} PRIVATE
     $<$<CONFIG:Release>:-Os>
     -fsingle-precision-constant
+    -Wall
     -Wundef
     -Wdouble-promotion
-    $<$<COMPILE_LANGUAGE:CXX>:-fno-threadsafe-statics;-fno-rtti;-fno-exceptions>)
+    -Wshadow
+    "$<$<COMPILE_LANGUAGE:CXX>:${_cxx_options}>")
 
 target_link_options(${DUET_BOARD} PRIVATE
     --specs=nano.specs
@@ -47,7 +53,7 @@ target_link_options(${DUET_BOARD} PRIVATE
     ${IAP_LINK_OPTIONS})
 
 target_link_libraries(${DUET_BOARD} PRIVATE
-    "$<LINK_GROUP:RESCAN,Duet::CoreN2G,Duet::RRFLibraries,supc++>"
+    "$<LINK_GROUP:RESCAN,Duet::CoreN2G,Duet::RRFLibraries>"
     m)
 
 if(IAP_COREN2G_DEFINES)
