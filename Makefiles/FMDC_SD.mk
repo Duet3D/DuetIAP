@@ -125,9 +125,8 @@ FMDCSD_LDLIBS := \
 	-L$(LIBRARIES_DIR)/CoreN2G/SAME5x_SDHC \
 	-L$(LIBRARIES_DIR)/RRFLibraries/SAME51 \
 	-lCoreN2G \
-	-lRRFLibraries
-
-FMDCSD_LDLIBS_POST := -Wl,--end-group -lm
+	-lRRFLibraries \
+	-lm
 
 # Object files
 FMDCSD_CPP_OBJS := $(FMDCSD_CPP_SRCS:%.cpp=$(FMDCSD_BUILD_DIR)/%.o)
@@ -150,7 +149,7 @@ FMDC_SD: $(FMDCSD_TARGET_BIN)
 $(FMDCSD_TARGET_ELF): $(FMDCSD_OBJS) $(FMDCSD_COREN2G_LIB) $(FMDCSD_RRFLIBS_LIB)
 	$(Q)echo "  LD      $@"
 	$(Q)mkdir -p $(@D)
-	$(Q)$(LD) $(FMDCSD_LDFLAGS1) -o $@ $(FMDCSD_LDFLAGS2) -Wl,--start-group $(FMDCSD_OBJS) $(FMDCSD_LDLIBS) $(FMDCSD_LDLIBS_POST)
+	$(Q)$(LD) $(FMDCSD_LDFLAGS1) -o $@ $(FMDCSD_LDFLAGS2) $(FMDCSD_OBJS) -Wl,--start-group $(FMDCSD_LDLIBS) -Wl,--end-group
 
 # Generate binary file
 $(FMDCSD_TARGET_BIN): $(FMDCSD_TARGET_ELF)

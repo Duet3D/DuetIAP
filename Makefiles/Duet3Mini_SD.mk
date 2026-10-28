@@ -129,9 +129,8 @@ D3MINISD_LDLIBS := \
 	-L$(LIBRARIES_DIR)/CoreN2G/SAME5x_SDHC \
 	-L$(LIBRARIES_DIR)/RRFLibraries/SAME51 \
 	-lCoreN2G \
-	-lRRFLibraries
-
-D3MINISD_LDLIBS_POST := -Wl,--end-group -lm
+	-lRRFLibraries \
+	-lm
 
 # Object files
 D3MINISD_CPP_OBJS := $(D3MINISD_CPP_SRCS:%.cpp=$(D3MINISD_BUILD_DIR)/%.o)
@@ -154,7 +153,7 @@ Duet3Mini_SD: $(D3MINISD_TARGET_BIN)
 $(D3MINISD_TARGET_ELF): $(D3MINISD_OBJS) $(D3MINISD_COREN2G_LIB) $(D3MINISD_RRFLIBS_LIB)
 	$(Q)echo "  LD      $@"
 	$(Q)mkdir -p $(@D)
-	$(Q)$(LD) $(D3MINISD_LDFLAGS1) -o $@ $(D3MINISD_LDFLAGS2) -Wl,--start-group $(D3MINISD_OBJS) $(D3MINISD_LDLIBS) $(D3MINISD_LDLIBS_POST)
+	$(Q)$(LD) $(D3MINISD_LDFLAGS1) -o $@ $(D3MINISD_LDFLAGS2) $(D3MINISD_OBJS) -Wl,--start-group $(D3MINISD_LDLIBS) -Wl,--end-group
 
 # Generate binary file
 $(D3MINISD_TARGET_BIN): $(D3MINISD_TARGET_ELF)

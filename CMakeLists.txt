@@ -52,9 +52,7 @@ target_link_options(${DUET_BOARD} PRIVATE
     LINKER:--warn-unresolved-symbols
     ${IAP_LINK_OPTIONS})
 
-target_link_libraries(${DUET_BOARD} PRIVATE
-    "$<LINK_GROUP:RESCAN,Duet::CoreN2G,Duet::RRFLibraries>"
-    m)
+duet_link_libraries(${DUET_BOARD} m)
 
 if(IAP_COREN2G_DEFINES)
     target_compile_definitions(CoreN2G PRIVATE ${IAP_COREN2G_DEFINES})
