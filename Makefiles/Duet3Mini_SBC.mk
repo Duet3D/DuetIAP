@@ -8,45 +8,42 @@ D3MINISBC_TARGET_ELF := $(D3MINISBC_BUILD_DIR)/$(D3MINISBC_TARGET_NAME).elf
 D3MINISBC_TARGET_BIN := $(D3MINISBC_BUILD_DIR)/$(D3MINISBC_TARGET_NAME).bin
 D3MINISBC_TARGET_MAP := $(D3MINISBC_BUILD_DIR)/$(D3MINISBC_TARGET_NAME).map
 
-# Workspace root
-WORKSPACE := ..
-
 # Library dependencies
-D3MINISBC_COREN2G_LIB := $(WORKSPACE)/CoreN2G/SAME5x_SDHC_USB/libCoreN2G.a
-D3MINISBC_RRFLIBS_LIB := $(WORKSPACE)/RRFLibraries/SAME51/libRRFLibraries.a
+D3MINISBC_COREN2G_LIB := $(LIBRARIES_DIR)/CoreN2G/SAME5x_SDHC_USB/libCoreN2G.a
+D3MINISBC_RRFLIBS_LIB := $(LIBRARIES_DIR)/RRFLibraries/SAME51/libRRFLibraries.a
 
 # Source directories
 D3MINISBC_SRC_DIR := src
 
 # Find all source files (SBC builds exclude Libraries/ and the bare-metal USB driver)
-D3MINISBC_CPP_SRCS := $(shell find $(D3MINISBC_SRC_DIR) -name '*.cpp' \
-	! -path '*/Libraries/*')
+D3MINISBC_CPP_SRCS := $(sort $(shell find $(D3MINISBC_SRC_DIR) -name '*.cpp' \
+	! -path '*/Libraries/*'))
 
-D3MINISBC_C_SRCS := $(shell find $(D3MINISBC_SRC_DIR) -name '*.c' \
-	! -path '*/Libraries/*')
+D3MINISBC_C_SRCS := $(sort $(shell find $(D3MINISBC_SRC_DIR) -name '*.c' \
+	! -path '*/Libraries/*'))
 
 # Include paths - C compiler
 D3MINISBC_C_INCLUDES := \
 	-I$(D3MINISBC_SRC_DIR) \
-	-I$(WORKSPACE)/CoreN2G/src \
-	-I$(WORKSPACE)/CoreN2G/src/SAME5x_C21/SAME5x \
-	-I$(WORKSPACE)/CoreN2G/src/SAME5x_C21/SAME5x/Config \
-	-I$(WORKSPACE)/CoreN2G/src/atmel/SAME54_DFP/1.1.134/include \
-	-I$(WORKSPACE)/CoreN2G/src/arm/CMSIS/5.4.0/CMSIS/Core/Include \
-	-I$(WORKSPACE)/RRFLibraries/src
+	-I$(LIBRARIES_DIR)/CoreN2G/src \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAME5x_C21/SAME5x \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAME5x_C21/SAME5x/Config \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/atmel/SAME54_DFP/1.1.134/include \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/arm/CMSIS/5.4.0/CMSIS/Core/Include \
+	-I$(LIBRARIES_DIR)/RRFLibraries/src
 
 # Include paths - C++ compiler
 D3MINISBC_CXX_INCLUDES := \
-	-I$(WORKSPACE)/CoreN2G/src \
-	-I$(WORKSPACE)/CoreN2G/src/SAME5x_C21 \
-	-I$(WORKSPACE)/CoreN2G/src/SAME5x_C21/SAME5x \
-	-I$(WORKSPACE)/CoreN2G/src/SAME5x_C21/SAME5x/Config \
-	-I$(WORKSPACE)/CoreN2G/src/SAME5x_C21/SAME5x/hal/include \
-	-I$(WORKSPACE)/CoreN2G/src/SAME5x_C21/SAME5x/hal/utils/include \
-	-I$(WORKSPACE)/CoreN2G/src/SAME5x_C21/SAME5x/hri \
-	-I$(WORKSPACE)/CoreN2G/src/arm/CMSIS/5.4.0/CMSIS/Core/Include \
-	-I$(WORKSPACE)/CoreN2G/src/atmel/SAME54_DFP/1.1.134/include \
-	-I$(WORKSPACE)/RRFLibraries/src \
+	-I$(LIBRARIES_DIR)/CoreN2G/src \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAME5x_C21 \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAME5x_C21/SAME5x \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAME5x_C21/SAME5x/Config \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAME5x_C21/SAME5x/hal/include \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAME5x_C21/SAME5x/hal/utils/include \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAME5x_C21/SAME5x/hri \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/arm/CMSIS/5.4.0/CMSIS/Core/Include \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/atmel/SAME54_DFP/1.1.134/include \
+	-I$(LIBRARIES_DIR)/RRFLibraries/src \
 	-I$(D3MINISBC_SRC_DIR)/Libraries/Fatfs
 
 # Preprocessor defines - C
@@ -79,6 +76,7 @@ D3MINISBC_CFLAGS := -c -std=gnu99 \
 	-nostdlib \
 	-Wundef \
 	-Wdouble-promotion \
+	-Wall \
 	-fsingle-precision-constant \
 	$(D3MINISBC_C_INCLUDES) \
 	$(D3MINISBC_C_DEFINES) \
@@ -100,6 +98,7 @@ D3MINISBC_CXXFLAGS := -c -std=c++20 \
 	-nostdlib \
 	-Wundef \
 	-Wdouble-promotion \
+	-Wall \
 	-fsingle-precision-constant \
 	$(D3MINISBC_CXX_INCLUDES) \
 	$(D3MINISBC_CXX_DEFINES) \
@@ -131,13 +130,11 @@ D3MINISBC_LDFLAGS2 := \
 
 # Library search paths and libraries
 D3MINISBC_LDLIBS := \
-	-L$(WORKSPACE)/CoreN2G/SAME5x_SDHC_USB \
-	-L$(WORKSPACE)/RRFLibraries/SAME51 \
+	-L$(LIBRARIES_DIR)/CoreN2G/SAME5x_SDHC_USB \
+	-L$(LIBRARIES_DIR)/RRFLibraries/SAME51 \
 	-lCoreN2G \
 	-lRRFLibraries \
-	-lsupc++
-
-D3MINISBC_LDLIBS_POST := -Wl,--end-group -lm
+	-lm
 
 # Object files
 D3MINISBC_CPP_OBJS := $(D3MINISBC_CPP_SRCS:%.cpp=$(D3MINISBC_BUILD_DIR)/%.o)
@@ -160,7 +157,7 @@ Duet3Mini_SBC: $(D3MINISBC_TARGET_BIN)
 $(D3MINISBC_TARGET_ELF): $(D3MINISBC_OBJS) $(D3MINISBC_COREN2G_LIB) $(D3MINISBC_RRFLIBS_LIB)
 	$(Q)echo "  LD      $@"
 	$(Q)mkdir -p $(@D)
-	$(Q)$(LD) $(D3MINISBC_LDFLAGS1) -o $@ $(D3MINISBC_LDFLAGS2) -Wl,--start-group $(D3MINISBC_OBJS) $(D3MINISBC_LDLIBS) $(D3MINISBC_LDLIBS_POST)
+	$(Q)$(LD) $(D3MINISBC_LDFLAGS1) -o $@ $(D3MINISBC_LDFLAGS2) $(D3MINISBC_OBJS) -Wl,--start-group $(D3MINISBC_LDLIBS) -Wl,--end-group
 
 # Generate binary file
 $(D3MINISBC_TARGET_BIN): $(D3MINISBC_TARGET_ELF)

@@ -8,47 +8,44 @@ D3MB6HCSBC_TARGET_ELF := $(D3MB6HCSBC_BUILD_DIR)/$(D3MB6HCSBC_TARGET_NAME).elf
 D3MB6HCSBC_TARGET_BIN := $(D3MB6HCSBC_BUILD_DIR)/$(D3MB6HCSBC_TARGET_NAME).bin
 D3MB6HCSBC_TARGET_MAP := $(D3MB6HCSBC_BUILD_DIR)/$(D3MB6HCSBC_TARGET_NAME).map
 
-# Workspace root
-WORKSPACE := ..
-
 # Library dependencies
-D3MB6HCSBC_COREN2G_LIB := $(WORKSPACE)/CoreN2G/SAME70_SDHC_USB/libCoreN2G.a
-D3MB6HCSBC_RRFLIBS_LIB := $(WORKSPACE)/RRFLibraries/SAME70/libRRFLibraries.a
+D3MB6HCSBC_COREN2G_LIB := $(LIBRARIES_DIR)/CoreN2G/SAME70_SDHC_USB/libCoreN2G.a
+D3MB6HCSBC_RRFLIBS_LIB := $(LIBRARIES_DIR)/RRFLibraries/SAME70/libRRFLibraries.a
 
 # Source directories
 D3MB6HCSBC_SRC_DIR := src
 
 # Find all source files (SBC builds exclude Libraries/ and the bare-metal USB driver)
-D3MB6HCSBC_CPP_SRCS := $(shell find $(D3MB6HCSBC_SRC_DIR) -name '*.cpp' \
-	! -path '*/Libraries/*')
+D3MB6HCSBC_CPP_SRCS := $(sort $(shell find $(D3MB6HCSBC_SRC_DIR) -name '*.cpp' \
+	! -path '*/Libraries/*'))
 
-D3MB6HCSBC_C_SRCS := $(shell find $(D3MB6HCSBC_SRC_DIR) -name '*.c' \
-	! -path '*/Libraries/*')
+D3MB6HCSBC_C_SRCS := $(sort $(shell find $(D3MB6HCSBC_SRC_DIR) -name '*.c' \
+	! -path '*/Libraries/*'))
 
 # Include paths - C compiler
 D3MB6HCSBC_C_INCLUDES := \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/common/utils \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/sam/drivers \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/cmsis/same70/include \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/header_files \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/preprocessor \
-	-I$(WORKSPACE)/CoreN2G/src/arm/CMSIS/5.4.0/CMSIS/Core/Include
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/common/utils \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/sam/drivers \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/cmsis/same70/include \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/header_files \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/preprocessor \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/arm/CMSIS/5.4.0/CMSIS/Core/Include
 
 # Include paths - C++ compiler
 D3MB6HCSBC_CXX_INCLUDES := \
-	-I$(WORKSPACE)/CoreN2G/src \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70 \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/common/utils \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/cmsis/same70/include \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/header_files \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/preprocessor \
-	-I$(WORKSPACE)/CoreN2G/src/SAM4S_4E_E70/SAME70 \
-	-I$(WORKSPACE)/CoreN2G/src/arm/CMSIS/5.4.0/CMSIS/Core/Include \
+	-I$(LIBRARIES_DIR)/CoreN2G/src \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70 \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/common/utils \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/cmsis/same70/include \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/header_files \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/asf/sam/utils/preprocessor \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/SAM4S_4E_E70/SAME70 \
+	-I$(LIBRARIES_DIR)/CoreN2G/src/arm/CMSIS/5.4.0/CMSIS/Core/Include \
 	-I$(D3MB6HCSBC_SRC_DIR)/Libraries/Fatfs \
-	-I$(WORKSPACE)/RRFLibraries/src
+	-I$(LIBRARIES_DIR)/RRFLibraries/src
 
 # Preprocessor defines - C
 D3MB6HCSBC_C_DEFINES := \
@@ -80,6 +77,7 @@ D3MB6HCSBC_CFLAGS := -c -std=gnu99 \
 	-nostdlib \
 	-Wundef \
 	-Wdouble-promotion \
+	-Wall \
 	-fsingle-precision-constant \
 	$(D3MB6HCSBC_C_INCLUDES) \
 	$(D3MB6HCSBC_C_DEFINES) \
@@ -102,6 +100,7 @@ D3MB6HCSBC_CXXFLAGS := -c -std=c++20 \
 	-nostdlib \
 	-Wundef \
 	-Wdouble-promotion \
+	-Wall \
 	-fsingle-precision-constant \
 	$(D3MB6HCSBC_CXX_INCLUDES) \
 	$(D3MB6HCSBC_CXX_DEFINES) \
@@ -133,13 +132,11 @@ D3MB6HCSBC_LDFLAGS2 := \
 
 # Library search paths and libraries
 D3MB6HCSBC_LDLIBS := \
-	-L$(WORKSPACE)/CoreN2G/SAME70_SDHC_USB \
-	-L$(WORKSPACE)/RRFLibraries/SAME70 \
+	-L$(LIBRARIES_DIR)/CoreN2G/SAME70_SDHC_USB \
+	-L$(LIBRARIES_DIR)/RRFLibraries/SAME70 \
 	-lCoreN2G \
 	-lRRFLibraries \
-	-lsupc++
-
-D3MB6HCSBC_LDLIBS_POST := -Wl,--end-group -lm
+	-lm
 
 # Object files
 D3MB6HCSBC_CPP_OBJS := $(D3MB6HCSBC_CPP_SRCS:%.cpp=$(D3MB6HCSBC_BUILD_DIR)/%.o)
@@ -162,7 +159,7 @@ Duet3_MB6HC_SBC: $(D3MB6HCSBC_TARGET_BIN)
 $(D3MB6HCSBC_TARGET_ELF): $(D3MB6HCSBC_OBJS) $(D3MB6HCSBC_COREN2G_LIB) $(D3MB6HCSBC_RRFLIBS_LIB)
 	$(Q)echo "  LD      $@"
 	$(Q)mkdir -p $(@D)
-	$(Q)$(LD) $(D3MB6HCSBC_LDFLAGS1) -o $@ $(D3MB6HCSBC_LDFLAGS2) -Wl,--start-group $(D3MB6HCSBC_OBJS) $(D3MB6HCSBC_LDLIBS) $(D3MB6HCSBC_LDLIBS_POST)
+	$(Q)$(LD) $(D3MB6HCSBC_LDFLAGS1) -o $@ $(D3MB6HCSBC_LDFLAGS2) $(D3MB6HCSBC_OBJS) -Wl,--start-group $(D3MB6HCSBC_LDLIBS) -Wl,--end-group
 
 # Generate binary file
 $(D3MB6HCSBC_TARGET_BIN): $(D3MB6HCSBC_TARGET_ELF)

@@ -11,14 +11,13 @@ CC  := $(CROSS_COMPILE)gcc
 CXX := $(CROSS_COMPILE)g++
 AS  := $(CROSS_COMPILE)gcc
 AR  := $(CROSS_COMPILE)ar
-LD  := $(CROSS_COMPILE)gcc
+LD  := $(CROSS_COMPILE)g++
 OBJCOPY := $(CROSS_COMPILE)objcopy
 SIZE := $(CROSS_COMPILE)size
 export CC CXX AS AR LD OBJCOPY SIZE
 
-# Workspace root
-WORKSPACE := ..
-export WORKSPACE
+# External library root
+LIBRARIES_DIR ?= ..
 
 # Quiet build support (Linux kernel style)
 # Use V=1 for verbose output
@@ -108,36 +107,36 @@ test-toolchain:
 
 # Common library build rules
 # These are marked as .PHONY so Make always checks if they need rebuilding
-.PHONY: $(WORKSPACE)/CoreN2G/SAME70_SDHC/libCoreN2G.a \
-        $(WORKSPACE)/CoreN2G/SAME70_SDHC_USB/libCoreN2G.a \
-        $(WORKSPACE)/CoreN2G/SAME5x_SDHC/libCoreN2G.a \
-        $(WORKSPACE)/CoreN2G/SAME5x_SDHC_USB/libCoreN2G.a \
-        $(WORKSPACE)/RRFLibraries/SAME70/libRRFLibraries.a \
-        $(WORKSPACE)/RRFLibraries/SAME51/libRRFLibraries.a
+.PHONY: $(LIBRARIES_DIR)/CoreN2G/SAME70_SDHC/libCoreN2G.a \
+        $(LIBRARIES_DIR)/CoreN2G/SAME70_SDHC_USB/libCoreN2G.a \
+        $(LIBRARIES_DIR)/CoreN2G/SAME5x_SDHC/libCoreN2G.a \
+        $(LIBRARIES_DIR)/CoreN2G/SAME5x_SDHC_USB/libCoreN2G.a \
+        $(LIBRARIES_DIR)/RRFLibraries/SAME70/libRRFLibraries.a \
+        $(LIBRARIES_DIR)/RRFLibraries/SAME51/libRRFLibraries.a
 
-$(WORKSPACE)/CoreN2G/SAME70_SDHC/libCoreN2G.a:
+$(LIBRARIES_DIR)/CoreN2G/SAME70_SDHC/libCoreN2G.a:
 	$(Q)echo "  BUILD   CoreN2G/SAME70_SDHC"
-	$(Q)$(MAKE) $(VERBOSE) -C $(WORKSPACE)/CoreN2G SAME70_SDHC
+	$(Q)$(MAKE) $(VERBOSE) -C $(LIBRARIES_DIR)/CoreN2G SAME70_SDHC
 
-$(WORKSPACE)/CoreN2G/SAME70_SDHC_USB/libCoreN2G.a:
+$(LIBRARIES_DIR)/CoreN2G/SAME70_SDHC_USB/libCoreN2G.a:
 	$(Q)echo "  BUILD   CoreN2G/SAME70_SDHC_USB"
-	$(Q)$(MAKE) $(VERBOSE) -C $(WORKSPACE)/CoreN2G SAME70_SDHC_USB
+	$(Q)$(MAKE) $(VERBOSE) -C $(LIBRARIES_DIR)/CoreN2G SAME70_SDHC_USB
 
-$(WORKSPACE)/CoreN2G/SAME5x_SDHC/libCoreN2G.a:
+$(LIBRARIES_DIR)/CoreN2G/SAME5x_SDHC/libCoreN2G.a:
 	$(Q)echo "  BUILD   CoreN2G/SAME5x_SDHC"
-	$(Q)$(MAKE) $(VERBOSE) -C $(WORKSPACE)/CoreN2G SAME5x_SDHC
+	$(Q)$(MAKE) $(VERBOSE) -C $(LIBRARIES_DIR)/CoreN2G SAME5x_SDHC
 
-$(WORKSPACE)/CoreN2G/SAME5x_SDHC_USB/libCoreN2G.a:
+$(LIBRARIES_DIR)/CoreN2G/SAME5x_SDHC_USB/libCoreN2G.a:
 	$(Q)echo "  BUILD   CoreN2G/SAME5x_SDHC_USB"
-	$(Q)$(MAKE) $(VERBOSE) -C $(WORKSPACE)/CoreN2G SAME5x_SDHC_USB
+	$(Q)$(MAKE) $(VERBOSE) -C $(LIBRARIES_DIR)/CoreN2G SAME5x_SDHC_USB
 
-$(WORKSPACE)/RRFLibraries/SAME70/libRRFLibraries.a:
+$(LIBRARIES_DIR)/RRFLibraries/SAME70/libRRFLibraries.a:
 	$(Q)echo "  BUILD   RRFLibraries/SAME70"
-	$(Q)$(MAKE) $(VERBOSE) -C $(WORKSPACE)/RRFLibraries SAME70
+	$(Q)$(MAKE) $(VERBOSE) -C $(LIBRARIES_DIR)/RRFLibraries SAME70
 
-$(WORKSPACE)/RRFLibraries/SAME51/libRRFLibraries.a:
+$(LIBRARIES_DIR)/RRFLibraries/SAME51/libRRFLibraries.a:
 	$(Q)echo "  BUILD   RRFLibraries/SAME51"
-	$(Q)$(MAKE) $(VERBOSE) -C $(WORKSPACE)/RRFLibraries SAME51
+	$(Q)$(MAKE) $(VERBOSE) -C $(LIBRARIES_DIR)/RRFLibraries SAME51
 
 # Include board-specific makefiles
 -include Makefiles/Duet3_MB6HC_SD.mk
@@ -164,6 +163,6 @@ clean:
 .PHONY: clean-all
 clean-all: clean
 	$(Q)echo "Cleaning library dependencies..."
-	$(Q)$(MAKE) $(VERBOSE) -C $(WORKSPACE)/CoreN2G clean
-	$(Q)$(MAKE) $(VERBOSE) -C $(WORKSPACE)/RRFLibraries clean
+	$(Q)$(MAKE) $(VERBOSE) -C $(LIBRARIES_DIR)/CoreN2G clean
+	$(Q)$(MAKE) $(VERBOSE) -C $(LIBRARIES_DIR)/RRFLibraries clean
 	$(Q)echo "Clean all complete"
