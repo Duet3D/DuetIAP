@@ -8,7 +8,7 @@
  * transport method and replaces the corresponding Flash content sector by sector.
  *
  * This application was written by Christian Hammacher (2016-2026) and is
- * licensed under the terms of the GPL v2.
+ * licensed under the terms of the GPL v3.
  */
 
 #include "iap.h"
