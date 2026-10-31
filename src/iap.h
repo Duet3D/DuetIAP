@@ -8,7 +8,7 @@
  * Flash content sector by sector.
  *
  * This application was written by Christian Hammacher (2016-2019) and is
- * licensed under the terms of the GPL v3.
+ * licensed under the terms of the GNU General Public License version 3.
  */
 
 #ifndef IAP_H_INCLUDED
